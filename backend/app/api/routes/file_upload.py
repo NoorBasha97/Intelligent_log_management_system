@@ -1,0 +1,69 @@
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from sqlalchemy.orm import Session
+from app.core.database import SessionLocal
+from app.models.raw_file import RawFile
+from app.models.file_formats import FileFormat
+from app.schemas.raw_file import RawFileResponse
+from app.services.file_storage import save_file_locally
+from app.services.log_parser.manager import parse_and_store_logs # Updated import
+from app.api.deps import get_active_user, get_current_user
+from app.models.user import User # Ensure correct path
+
+router = APIRouter(prefix="/files", tags=["File Upload"])
+
+def get_db():
+    db = SessionLocal()
+    try: yield db
+    finally: db.close() 
+
+@router.post("/upload", response_model=RawFileResponse)
+def upload_file(
+    team_id: int,
+    format_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user : User = Depends(get_active_user) # 'user' is an object, not a Session
+):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="File name is missing")
+
+    # 1. Identify format name (e.g., 'JSON', 'LOG')
+    fmt = db.query(FileFormat).filter(FileFormat.format_id == format_id).first()
+    if not fmt:
+        raise HTTPException(status_code=400, detail="Invalid format_id")
+
+    # 2. Save file locally
+    file_path, file_size = save_file_locally(team_id, file)
+
+    try:
+        # 3. Store metadata
+        raw_file = RawFile( 
+            team_id=team_id,
+            uploaded_by=current_user.user_id,
+            original_name=file.filename,
+            file_size_bytes=file_size,
+            format_id=format_id
+        )
+        db.add(raw_file)
+        db.flush() # Get raw_file.file_id without committing transaction yet
+
+        # 4. Read and Parse
+        with open(file_path, "r") as f:
+            raw_text = f.read()
+
+        parse_and_store_logs(
+            db=db,
+            file_id=raw_file.file_id,
+            raw_text=raw_text,
+            format_name=fmt.format_name, # Key fix: Pass format name
+            environment_code="DEV"
+        )
+        
+        db.flush()
+        db.commit()
+        db.refresh(raw_file)
+        return raw_file
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to process: {str(e)}")

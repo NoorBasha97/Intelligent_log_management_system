@@ -1,0 +1,10 @@
+2026-01-15 10:15:22 INFO AuthService User login successful user_id=42 ip=192.168.1.10
+2026-01-15 10:16:01 WARN AuthService Invalid password attempt user_id=42 ip=192.168.1.10
+2026-01-15 10:16:10 ERROR AuthService Account locked after multiple failures user_id=42
+2026-01-15 10:17:45 INFO FileUploadService File uploaded file_name=data.csv size=24576
+2026-01-15 10:18:03 DEBUG ParserService Parsing started for file_id=101
+2026-01-15 10:19:11 INFO AuditService Compliance policy updated by admin_01
+2026-01-15 10:20:11 WARN SecurityService intrusion attempt detected from ip=10.0.0.5
+2026-01-15 10:21:05 INFO InfraService Server node-01 memory usage at 85%
+2026-01-15 10:21:55 ERROR DatabaseService Connection timeout db=postgres retry=3
+2026-01-15 10:22:30 FATAL System Unexpected shutdown initiated
