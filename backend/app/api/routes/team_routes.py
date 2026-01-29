@@ -122,3 +122,51 @@ def get_my_team(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc)
         )
+
+
+# backend/app/api/routes/team_routes.py
+
+@router.get("/my-team-id")
+def get_my_team_id(
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_active_user)
+):
+    from app.models.user_teams import UserTeam
+    
+    # Query the user_teams table for this user's active membership
+    membership = db.query(UserTeam).filter(
+        UserTeam.user_id == current_user.user_id
+    ).first()
+
+    if not membership:
+        # If the user isn't in a team, and they are an admin, they might use team 1
+        if current_user.user_role == "ADMIN":
+            return {"team_id": 1} 
+        raise HTTPException(status_code=404, detail="User is not assigned to any team")
+
+    return {"team_id": membership.team_id}
+
+
+
+# backend/app/api/routes/team_routes.py
+
+@router.get("/my-joined-teams", response_model=list[TeamResponse])
+def get_my_joined_teams(
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_active_user)
+):
+    from app.models.user_teams import UserTeam
+    from app.models.teams import Team
+
+    # If Admin, they can upload to any team
+    # if current_user.user_role == "ADMIN":
+    #     return db.query(Team).all()
+
+    # If regular user, join user_teams and teams table
+    joined_teams = db.query(Team).join(
+        UserTeam, UserTeam.team_id == Team.team_id
+    ).filter(
+        UserTeam.user_id == current_user.user_id
+    ).all()
+
+    return joined_teams

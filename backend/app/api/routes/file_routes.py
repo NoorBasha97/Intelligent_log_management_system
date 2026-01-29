@@ -96,20 +96,6 @@ def get_all_files(
     return {"total": total, "items": items}
 
 # --- DELETE FILE ROUTE ---
-@router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_file(
-    file_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("DELETE_LOG"))
-):
-    file = FileRepository.get_by_id(db, file_id)
-    if not file:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    # Permanent delete from DB (CASCADE will handle log_entries if setup)
-    db.delete(file)
-    db.commit()
-    return None
 
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_file_permanently(
@@ -180,3 +166,46 @@ def manual_archive_file(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    
+    
+    # backend/app/api/routes/file_routes.py
+
+@router.get("/me", response_model=FileListResponse)
+def get_user_files(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_active_user),
+    scope: str = Query("me", regex="^(me|team)$"),
+    limit: int = 50,
+    offset: int = 0
+):
+    from app.services.team_service import TeamService
+    from app.repositories.file_repository import FileRepository
+
+    target_user_id = None
+    target_team_id = None
+
+    if scope == "me":
+        # Only files I uploaded
+        target_user_id = current_user.user_id
+    else:
+        # Files from my entire team
+        try:
+            team = TeamService.get_active_team_for_user(db, user_id=current_user.user_id)
+            target_team_id = team.team_id
+        except ValueError:
+            return {"total": 0, "items": []}
+
+    # Reusing the FileRepository.list_files logic
+    # Note: Ensure your repository supports passing both team_id and user_id if needed, 
+    # or just filter here directly.
+    query = db.query(RawFile)
+    
+    if target_user_id:
+        query = query.filter(RawFile.uploaded_by == target_user_id)
+    else:
+        query = query.filter(RawFile.team_id == target_team_id)
+
+    total = query.count()
+    items = query.order_by(RawFile.uploaded_at.desc()).offset(offset).limit(limit).all()
+
+    return {"total": total, "items": items}

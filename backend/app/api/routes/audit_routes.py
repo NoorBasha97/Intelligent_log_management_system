@@ -1,51 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from typing import Optional
-from datetime import datetime
-
-from app.api.deps import get_db, require_permission
+from sqlalchemy import desc
+from app.api.deps import get_db, get_active_user, require_permission
+from app.models.audit_trail import AuditTrail
 from app.models.user import User
-from app.schemas.audit import AuditQueryParams, AuditListResponse
-from app.services.audit_service import AuditService
+from app.schemas.audit import AuditTrailList
 
+router = APIRouter(prefix="/audit", tags=["Audit Trail"])
 
-router = APIRouter(
-    prefix="/audit",
-    tags=["Audit"]
-)
-
-
-# -------------------------
-# List audit events (ADMIN)
-# -------------------------
-@router.get(
-    "",
-    response_model=AuditListResponse
-)
-def list_audit_events(
-    params: AuditQueryParams = Depends(),
+@router.get("", response_model=AuditTrailList)
+def get_all_audit_logs(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_permission("VIEW_SECURITY_LOG"))
+    # Ensure ONLY admins can access this
+    current_user: User = Depends(require_permission("MANAGE_USERS")), 
+    limit: int = 100,
+    offset: int = 0
 ):
-    """
-    View audit trail.
-    ADMIN ONLY.
-    """
-    try:
-        result = AuditService.list_audit_events(
-            db,
-            requesting_user_id=current_user.user_id,
-            user_id=params.user_id,
-            action_type=params.action_type,
-            start_time=params.start_time,
-            end_time=params.end_time,
-            limit=params.limit,
-            offset=params.offset
-        )
-        return result
+    # Join with User table to get the username
+    query = db.query(
+        AuditTrail.action_id,
+        AuditTrail.user_id,
+        AuditTrail.action_type,
+        AuditTrail.action_time,
+        User.username.label("username")
+    ).outerjoin(User, AuditTrail.user_id == User.user_id)
 
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc)
-        )
+    total = query.count()
+    items = query.order_by(desc(AuditTrail.action_time)).offset(offset).limit(limit).all()
+
+    return {"total": total, "items": items}

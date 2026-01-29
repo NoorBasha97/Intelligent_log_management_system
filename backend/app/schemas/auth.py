@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field
-
+from typing import List
 
 # =========================
 # Login request
@@ -50,3 +50,16 @@ class AccountStatusResponse(BaseModel):
     is_locked: bool
     locked_until: Optional[datetime]
     failed_attempts: int
+
+
+class LoginHistoryResponse(BaseModel):
+    login_id: int
+    login_time: datetime
+    status: bool
+
+    class Config:
+        from_attributes = True
+
+class LoginHistoryList(BaseModel):
+    total: int
+    items: List[LoginHistoryResponse]

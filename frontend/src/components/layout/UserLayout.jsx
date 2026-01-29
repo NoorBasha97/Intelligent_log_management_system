@@ -30,18 +30,13 @@ const UserLayout = () => {
           </div>
 
           <div className="flex items-center gap-5">
-            {/* Notifications */}
-            <button className="relative text-slate-400 hover:text-indigo-600 transition-colors p-1">
-              <Bell size={20} />
-              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full border-2 border-white"></span>
-            </button>
-            
+          
             <div className="h-8 w-[1px] bg-slate-200"></div>
             
             {/* User Info */}
             <div className="flex items-center gap-3 pl-2">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-700 leading-none">Team Member</p>
+                <p className="text-xs font-bold text-slate-700 leading-none">User Member</p>
                 <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-medium">Standard Access</p>
               </div>
               <div className="bg-indigo-100 p-1 rounded-full border border-indigo-200">

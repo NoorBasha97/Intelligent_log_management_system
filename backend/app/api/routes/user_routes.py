@@ -1,6 +1,7 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_active_user, require_permission
@@ -12,6 +13,10 @@ from app.schemas.user import (
 )
 from app.services.user_service import UserService
 from app.models.user_teams import UserTeam
+from app.models.log_entries import LogEntry
+from app.models.login_history import UserLoginHistory
+from app.models.raw_file import RawFile
+from app.models.user_credentials import UserCredential
 
 
 router = APIRouter(
@@ -30,8 +35,11 @@ router = APIRouter(
 )
 def create_user(
     payload: UserCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_active_user) 
 ):
+    if current_user:
+        db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
     try:
         user = UserService.create_user(db, payload) 
         return user
@@ -79,16 +87,14 @@ def list_users(
 # -------------------------
 # Update user (self)
 # -------------------------
-@router.put(
-    "/me",
-    response_model=UserResponse
-)
-def update_me(
+@router.put("/me", response_model=UserResponse)
+def update_my_profile(
     payload: UserUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_active_user)
 ):
     try:
+        # We pass the current_user (from token) to the service
         updated = UserService.update_user(
             db,
             current_user,
@@ -133,21 +139,41 @@ def update_user_by_admin(
 # -------------------------
 # Delete user (ADMIN)
 # -------------------------
-@router.delete(
-    "/{user_id}",
-    status_code=status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(require_permission("MANAGE_USERS"))
+    current_user: User = Depends(require_permission("MANAGE_USERS"))
 ):
-    user = UserService.get_user_by_id(db, user_id)
+    # 1. Fetch the user
+    user = db.query(User).filter(User.user_id == user_id).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+        raise HTTPException(status_code=404, detail="User not found")
 
-    UserService.delete_user(db, user)
-    return None
+    try:
+        # 2. MANUAL CASCADE (Backup logic if DB constraints fail)
+        # Find all files uploaded by this user
+        user_files = db.query(RawFile).filter(RawFile.uploaded_by == user_id).all()
+        file_ids = [f.file_id for f in user_files]
+
+        # Delete logs belonging to those files
+        if file_ids:
+            db.query(LogEntry).filter(LogEntry.file_id.in_(file_ids)).delete(synchronize_session=False)
+        
+        # Delete the files themselves
+        db.query(RawFile).filter(RawFile.uploaded_by == user_id).delete(synchronize_session=False)
+
+        # Delete login history, team assignments, and credentials
+        db.query(UserLoginHistory).filter(UserLoginHistory.user_id == user_id).delete(synchronize_session=False)
+        db.query(UserTeam).filter(UserTeam.user_id == user_id).delete(synchronize_session=False)
+        db.query(UserCredential).filter(UserCredential.user_id == user_id).delete(synchronize_session=False)
+
+        # 3. Final step: Delete the user
+        db.delete(user)
+        db.commit()
+        
+        return None
+    except Exception as e:
+        db.rollback()
+        print(f"Error deleting user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

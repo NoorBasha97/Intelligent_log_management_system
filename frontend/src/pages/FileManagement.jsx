@@ -3,7 +3,7 @@ import api from '../api/axios';
 import {
   Upload, FileText, Trash2, Search, Calendar,
   Filter, Loader2, RotateCcw, Users as TeamIcon, 
-  Archive as ArchiveIcon, CheckCircle // Added icons
+  Archive as ArchiveIcon, CheckCircle, ChevronLeft, ChevronRight // Added Chevron icons
 } from 'lucide-react';
 
 export default function FileManagement() {
@@ -12,6 +12,11 @@ export default function FileManagement() {
   const [uploading, setUploading] = useState(false);
   const [teams, setTeams] = useState([]); 
   const fileInputRef = useRef(null);
+  const [currentUserTeamId, setCurrentUserTeamId] = useState(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const initialFilters = {
     search: '', start_date: '', severity: '',
@@ -23,11 +28,22 @@ export default function FileManagement() {
   useEffect(() => {
     fetchTeams();
     fetchFiles();
+    fetchMyTeam();
+    setCurrentPage(1); // Reset to page 1 when filters change
   }, [filters]);
+
+  const fetchMyTeam = async () => {
+    try {
+      const res = await api.get('/teams/my-team-id');
+      setCurrentUserTeamId(res.data.team_id);
+    } catch (err) {
+      console.error("Failed to fetch user team info");
+    }
+  };
 
   const fetchTeams = async () => {
     try {
-      const res = await api.get('/teams'); 
+      const res = await api.get('/teams');
       setTeams(res.data);
     } catch (err) { console.error("Could not fetch teams"); }
   };
@@ -44,6 +60,12 @@ export default function FileManagement() {
     setLoading(false);
   };
 
+  // Pagination Calculations
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentFiles = files.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(files.length / itemsPerPage);
+
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -57,7 +79,7 @@ export default function FileManagement() {
     formData.append('file', file);
     setUploading(true);
     try {
-      await api.post(`/files/upload?team_id=${team_id}&format_id=${formatId}`, formData, {
+      await api.post(`/files/upload?team_id=${currentUserTeamId}&format_id=${formatId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert("File uploaded and parsed successfully!");
@@ -74,18 +96,21 @@ export default function FileManagement() {
 
   const deleteFile = async (id) => {
     if (window.confirm("Permanent Delete: Remove file and all related logs?")) {
-      await api.delete(`/files/${id}`);
-      fetchFiles();
+      try {
+        await api.delete(`/files/${id}`);
+        fetchFiles();
+      } catch (err) {
+        alert("Delete failed: " + (err.response?.data?.detail || "Error"));
+      }
     }
   };
 
-  // --- NEW ARCHIVE FUNCTION ---
   const archiveFile = async (id) => {
     if (window.confirm("Manual Archive: Are you sure you want to archive this file now?")) {
         try {
             await api.patch(`/files/${id}/archive`);
             alert("File successfully moved to archives.");
-            fetchFiles(); // Refresh to see "Archived" status
+            fetchFiles(); 
         } catch (err) {
             alert("Archive failed: " + (err.response?.data?.detail || "Error"));
         }
@@ -115,7 +140,6 @@ export default function FileManagement() {
         </button>
       </div>
 
-      {/* --- ADVANCED FILTER BAR --- */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end">
           <div className="relative lg:col-span-2">
@@ -173,7 +197,6 @@ export default function FileManagement() {
         </div>
       </div>
 
-      {/* --- FILES TABLE --- */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -199,7 +222,7 @@ export default function FileManagement() {
                     </div>
                   </td>
                 </tr>
-              ) : (files.map(f => (
+              ) : (currentFiles.map(f => ( // Use currentFiles here
                 <tr key={f.file_id} className={`hover:bg-slate-50/50 transition ${f.is_archived ? 'bg-slate-50 opacity-75' : ''}`}>
                   <td className="p-4 font-mono text-xs text-slate-400">#{f.file_id}</td>
                   <td className="p-4">
@@ -212,27 +235,14 @@ export default function FileManagement() {
                   <td className="p-4 font-bold text-indigo-600 text-xs">{f.team_name || 'Global'}</td>
                   <td className="p-4 text-slate-500">{(f.file_size_bytes / 1024).toFixed(1)} KB</td>
                   <td className="p-4 flex items-center justify-center gap-3">
-                    
-                    {/* NEW ARCHIVE BUTTON */}
                     {!f.is_archived ? (
-                        <button 
-                            onClick={() => archiveFile(f.file_id)}
-                            className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                            title="Archive Now"
-                        >
+                        <button onClick={() => archiveFile(f.file_id)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Archive Now">
                             <ArchiveIcon size={16} />
                         </button>
                     ) : (
-                        <div className="p-2 text-green-500" title="Archived">
-                            <CheckCircle size={16} />
-                        </div>
+                        <div className="p-2 text-green-500" title="Archived"><CheckCircle size={16} /></div>
                     )}
-
-                    <button 
-                        onClick={() => deleteFile(f.file_id)} 
-                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                        title="Delete Permanently"
-                    >
+                    <button onClick={() => deleteFile(f.file_id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete Permanently">
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -241,6 +251,42 @@ export default function FileManagement() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {files.length > itemsPerPage && (
+          <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-t border-slate-200">
+            <div className="text-sm text-slate-500 font-medium">
+              Showing <span className="text-slate-700">{indexOfFirstItem + 1}</span> to <span className="text-slate-700">{Math.min(indexOfLastItem, files.length)}</span> of <span className="text-slate-700">{files.length}</span> files
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={16} className="text-slate-600" />
+              </button>
+              <div className="flex gap-1">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
+                    className={`px-3.5 py-1 rounded-lg border text-sm font-bold transition-all ${currentPage === i + 1 ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={16} className="text-slate-600" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

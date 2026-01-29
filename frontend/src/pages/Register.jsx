@@ -80,7 +80,7 @@ function Register() {
               <input
                 name="first_name"
                 type="text"
-                placeholder="John"
+                placeholder="first name"
                 className={inputClass}
                 value={formData.first_name}
                 onChange={handleChange}
@@ -92,7 +92,7 @@ function Register() {
               <input
                 name="last_name"
                 type="text"
-                placeholder="Doe"
+                placeholder="last name"
                 className={inputClass}
                 value={formData.last_name}
                 onChange={handleChange}
@@ -108,7 +108,7 @@ function Register() {
               <input
                 name="email"
                 type="email"
-                placeholder="john@example.com"
+                placeholder="example@gmail.com"
                 className={inputClass}
                 value={formData.email}
                 onChange={handleChange}
@@ -136,7 +136,7 @@ function Register() {
               <input
                 name="username"
                 type="text"
-                placeholder="johndoe123"
+                placeholder="username"
                 className={inputClass}
                 value={formData.username}
                 onChange={handleChange}

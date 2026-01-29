@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_active_user
-from app.schemas.auth import LoginRequest, Token, PasswordChangeRequest
+from app.schemas.auth import LoginHistoryList, LoginRequest, Token, PasswordChangeRequest
 from app.services.auth_service import AuthService
+from app.models.login_history import UserLoginHistory
+from app.models.user import User
 
 
 router = APIRouter(
@@ -70,3 +73,20 @@ def change_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc)
         )
+        
+
+@router.get("/login-history/me", response_model=LoginHistoryList)
+def get_my_login_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_active_user)
+):
+    query = db.query(UserLoginHistory).filter(UserLoginHistory.user_id == current_user.user_id)
+    
+    # Get total count
+    total = query.count()
+    
+    # Get items ordered by most recent
+    items = query.order_by(desc(UserLoginHistory.login_time)).all()
+    
+    return {"total": total, "items": items}
+

@@ -28,7 +28,6 @@ function Login() {
     try {
       const response = await api.post("/auth/login", formData);
       localStorage.setItem("token", response.data?.access_token);
-      console.log(response)
       if(response.status==200){
         if(response.data.role == 'ADMIN'){
 
@@ -38,7 +37,7 @@ function Login() {
           navigate("/user/dashboard")
         }
       }
-      // Redirect to the dashboard
+    
     } catch (error) {
       const errorMsg = error.response?.data?.detail || "Invalid email or password";
       setError(errorMsg);
@@ -57,7 +56,7 @@ function Login() {
         {/* Logo/Icon Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200 mb-4">
-            <ShieldCheck size={32} />
+            <ShieldCheck size={30} />
           </div>
           <h2 className="text-3xl font-bold text-slate-800">Welcome Back</h2>
           <p className="text-slate-500 mt-2">Sign in to manage your logs</p>
@@ -81,7 +80,7 @@ function Login() {
               <input
                 name="email"
                 type="email"
-                placeholder="name@company.com"
+                placeholder="name@gmail.com"
                 className={inputClass}
                 onChange={handleChange}
                 required
@@ -92,8 +91,8 @@ function Login() {
           {/* Password Field */}
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className={labelClass}>Password</label>
-              <a href="#" className="text-xs text-indigo-600 hover:underline">Forgot?</a>
+              {/* <label className={labelClass}>Password</label>
+              <a href="#" className="text-xs text-indigo-600 hover:underline">Forgot?</a> */}
             </div>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />

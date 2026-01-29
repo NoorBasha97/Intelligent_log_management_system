@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.models.raw_file import RawFile
@@ -24,6 +25,18 @@ def upload_file(
     db: Session = Depends(get_db),
     current_user : User = Depends(get_active_user) # 'user' is an object, not a Session
 ):
+    # SECURITY CHECK: Non-admins can only upload to their OWN team
+    if current_user.user_role != "ADMIN":
+        from app.models.user_teams import UserTeam
+        membership = db.query(UserTeam).filter(
+            UserTeam.user_id == current_user.user_id,
+            UserTeam.team_id == team_id
+        ).first()
+        if not membership:
+            raise HTTPException(status_code=403, detail="You do not belong to this team")
+        
+    db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
+        
     if not file.filename:
         raise HTTPException(status_code=400, detail="File name is missing")
 

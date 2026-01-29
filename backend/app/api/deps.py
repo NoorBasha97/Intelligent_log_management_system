@@ -10,7 +10,7 @@ from app.core.database import SessionLocal, get_db
 from ..models.user import User
 from app.repositories.user_repository import UserRepository
 from app.services.role_service import RoleService
-from app.core.config import SECRET_KEY, ALGORITHM
+from app.core.config import ALGORITHM, SECRET_KEY
 
 
 
@@ -81,7 +81,14 @@ def get_active_user(
         )
     return current_user
 
-
+def get_db_with_user(
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    # 🔥 THIS LINE FIXES THE NULL USER ID
+    # It tells Postgres: "For this connection, the user is X"
+    db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
+    return db
 # -------------------------
 # Permission guard
 # -------------------------

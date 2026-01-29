@@ -12,6 +12,7 @@ from app.api.routes import (
     audit_routes,
 )
 from app.api.routes.file_upload import router as file_router
+from app.api.routes import dashboard_routes
 # -------------------------
 # Create FastAPI app
 # -------------------------
@@ -63,3 +64,4 @@ app.include_router(file_routes.router)
 app.include_router(log_routes.router)
 app.include_router(audit_routes.router)
 app.include_router(file_router)
+app.include_router(dashboard_routes.router)
