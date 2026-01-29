@@ -25,7 +25,7 @@ app = FastAPI(
 # ✅ CORS configuration (ADD THIS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173","http://localhost:8000"],  # React dev server
+    allow_origins=["http://localhost:5173","http://localhost:8000","https://intelligent-log-system.vercel.app","https://intelligent-log-management-system.onrender.com"],  # React dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
