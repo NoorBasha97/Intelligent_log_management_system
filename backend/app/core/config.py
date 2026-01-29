@@ -3,46 +3,46 @@ from typing import Optional
 from jose import jwt
 
 # Settings - In production, move these to your config/env file
-SECRET_KEY = "your-very-secret-key-change-me" 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 300
+# SECRET_KEY = "your-very-secret-key-change-me" 
+# ALGORITHM = "HS256"
+# ACCESS_TOKEN_EXPIRE_MINUTES = 300
 
 def create_access_token(data: dict) -> str:
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = data.copy()
     payload.update({"exp": expire})
-    encoded_jwt = jwt.encode(payload,SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(payload,settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt   # ✅ ONLY STRING
 
 
-# from pydantic_settings import BaseSettings
-# from typing import List
+from pydantic_settings import BaseSettings
+from typing import List
 
-# class Settings(BaseSettings):
-#     # Database Settings
-#     DB_USER: str
-#     DB_PASSWORD: str
-#     DB_HOST: str
-#     DB_PORT: int
-#     DB_NAME: str
-#     # DATABASE_URL: str
+class Settings(BaseSettings):
+    # Database Settings
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_HOST: str
+    DB_PORT: int
+    DB_NAME: str
+    # DATABASE_URL: str
     
-#     # Security
-#     SECRET_KEY: str
-#     ALGORITHM: str = "HS256"
-#     ACCESS_TOKEN_EXPIRE_MINUTES: int = 300
+    # Security
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 300
  
     
-#     @property
-#     def cors_origins_list(self) -> List[str]:
-#         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+    @property
+    def cors_origins_list(self) -> List[str]:
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
     
-#     class Config:
-#         env_file = ".env"
-#         case_sensitive = True
-#         extra = "ignore"
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+        extra = "ignore"
 
-# settings = Settings()
+settings = Settings()
 
 
 

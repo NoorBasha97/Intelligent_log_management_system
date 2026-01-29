@@ -10,8 +10,9 @@ from app.core.database import SessionLocal, get_db
 from ..models.user import User
 from app.repositories.user_repository import UserRepository
 from app.services.role_service import RoleService
-from app.core.config import ALGORITHM, SECRET_KEY
+# from app.core.config import ALGORITHM, SECRET_KEY
 
+from app.core.config import settings
 
 
 
@@ -33,8 +34,8 @@ def get_current_user(
     try:
         payload = jwt.decode( 
             token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM]
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
         )
         email: str | None = payload.get("sub")
         role : str | None = payload.get("role")

@@ -35,11 +35,9 @@ router = APIRouter(
 )
 def create_user(
     payload: UserCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_active_user) 
+    db: Session = Depends(get_db)
 ):
-    if current_user:
-        db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
+   
     try:
         user = UserService.create_user(db, payload) 
         return user

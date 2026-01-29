@@ -8,7 +8,7 @@ from app.models.user_credentials import UserCredential
 from app.repositories.user_repository import UserRepository
 from app.services.user_service import UserService
 from app.models.login_history import UserLoginHistory
-from ..core.config import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
+from ..core.config import settings, create_access_token
 from app.core.database import SessionLocal 
 
 # Security constants
@@ -92,7 +92,7 @@ class AuthService:
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "expires_in": ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             "role": user_role
         }
 

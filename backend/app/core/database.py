@@ -7,19 +7,19 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import event, text
 from sqlalchemy.orm import Session
 import urllib
-# from .config import settings
+from .config import settings
 # Load environment variables from .env
-load_dotenv()
+# load_dotenv()
 
-# password = urllib.parse.quote_plus(settings.DB_PASSWORD)
+password = urllib.parse.quote_plus(settings.DB_PASSWORD)
 
-# DATABASE_URL = (
-#     f"postgresql+psycopg2://{settings.DB_USER}:{password}@"
-#     f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}?sslmode=require"
-# )
+DATABASE_URL = (
+    f"postgresql+psycopg2://{settings.DB_USER}:{password}@"
+    f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}?sslmode=require"
+)
 
 # Read DATABASE_URL
-DATABASE_URL = os.getenv("DATABASE_URL")
+# DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 if not DATABASE_URL:
