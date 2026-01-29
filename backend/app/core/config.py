@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 300
  
     # Add this field so the property below works
-    CORS_ORIGINS: str = "http://localhost:5173,https://intelligent-log-system.vercel.app"
+    CORS_ORIGINS: str = "http://localhost:5173,https://intelligent-log-system.vercel.app,http://localhost:8000,https://intelligent-log-management-system.onrender.com"
     
     @property
     def cors_origins_list(self) -> List[str]:

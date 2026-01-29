@@ -13,6 +13,7 @@ from app.api.routes import (
 )
 from app.api.routes.file_upload import router as file_router
 from app.api.routes import dashboard_routes
+from app.core.config import settings
 # -------------------------
 # Create FastAPI app
 # -------------------------
@@ -25,7 +26,7 @@ app = FastAPI(
 # ✅ CORS configuration (ADD THIS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173","http://localhost:8000","https://intelligent-log-system.vercel.app","https://intelligent-log-management-system.onrender.com"],  # React dev server
+    allow_origins=settings.cors_origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
