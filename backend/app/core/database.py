@@ -28,6 +28,7 @@ if not DATABASE_URL:
 # Create SQLAlchemy engine
 engine = create_engine(
     DATABASE_URL,
+    connect_args={"sslmode": "require"},
     pool_pre_ping=True
 )
 
