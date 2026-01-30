@@ -97,18 +97,38 @@ def parse_json_log(text, lookups):
         })
     return results
 
-def parse_csv_log(text, lookups):
+def parse_csv_log(text):
     results = []
-    f = io.StringIO(text)
-    reader = csv.DictReader(f) # Assumes header: timestamp,severity,service,message
+    f = io.StringIO(text.strip())
+    reader = csv.DictReader(f, skipinitialspace=True)
+    
     for row in reader:
-        results.append({
-            "timestamp": datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S"),
-            "severity": row["severity"].upper(),
-            "service": row.get("service", "CSV-SVC"),
-            "message": row["message"]
-        })
+        # 1. Standardize keys to lowercase and remove spaces
+        # This handles "Timestamp", "timestamp ", " TIMESTAMP" all at once
+        d = {str(k).lower().strip(): v for k, v in row.items()}
+        
+        try:
+            # 2. Extract values using various possible header names
+            ts_str = d.get('timestamp') or d.get('time') or d.get('date')
+            sev_str = d.get('severity') or d.get('level') or 'INFO'
+            msg_str = d.get('message') or d.get('msg') or d.get('text')
+            svc_str = d.get('service') or d.get('app') or 'CSV-SVC'
+
+            if not ts_str or not msg_str:
+                continue
+
+            results.append({
+                "timestamp": datetime.strptime(ts_str.strip(), "%Y-%m-%d %H:%M:%S"),
+                "severity": sev_str.strip().upper(),
+                "service": svc_str.strip(),
+                "message": msg_str.strip()
+            })
+        except Exception as e:
+            print(f"CSV Parse Row Error: {e}")
+            continue
+            
     return results
+
 
 def parse_xml_log(text, lookups):
     results = []

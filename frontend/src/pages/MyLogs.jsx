@@ -66,6 +66,21 @@ export default function MyLogs() {
     }
   };
 
+  const handleFileChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  
+  // 🔥 CRITICAL: Match these IDs to your database 'file_formats' table
+  let formatId = 1; // Default for .log or .txt
+  if (ext === 'json') formatId = 3;
+  if (ext === 'csv') formatId = 4; // Ensure 4 is CSV in your DB
+  if (ext === 'xml') formatId = 5;
+
+  console.log(`Uploading ${file.name} as Format ID: ${formatId}`);
+  // ... rest of your upload logic
+};
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen text-slate-900 font-sans">
       {/* --- HEADER --- */}

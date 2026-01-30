@@ -61,7 +61,7 @@ def upload_file(
         db.flush() # Get raw_file.file_id without committing transaction yet
 
         # 4. Read and Parse
-        with open(file_path, "r") as f:
+        with open(file_path, "r", encoding="utf-8-sig") as f:
             raw_text = f.read()
 
         parse_and_store_logs(
@@ -79,4 +79,8 @@ def upload_file(
 
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to process: {str(e)}")
+        import traceback
+        # This will print the full error in your terminal
+        print(traceback.format_exc()) 
+        # This will send the error message to the frontend so you can see it in the Alert
+        raise HTTPException(status_code=500, detail=f"Crashed at: {str(e)}")
