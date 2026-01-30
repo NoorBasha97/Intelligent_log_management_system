@@ -18,14 +18,17 @@ import UserProfile from './pages/UserProfile';
 import UserDashboard from './pages/UserDashboard';
 import LoginHistory from './pages/LoginHistory';
 import AuditTrail from './pages/AuditTrail';
+import LandingPage from './pages/LandingPage';
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* --- Public Routes --- */}
+        <Route path="/" element={<LandingPage />} />
+        
         <Route path="/login" element={<Login />} />
-        <Route path='/register' element={<Register/>} />
+        <Route path="/register" element={<Register />} />
 
         {/* --- Admin Protected Routes --- */}
         <Route path="/admin" element={<ProtectedRoute> <AdminLayout /> </ProtectedRoute>}>
