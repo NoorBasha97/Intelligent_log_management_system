@@ -21,6 +21,8 @@ def parse_and_store_logs(db: Session, file_id: int, raw_text: str, format_name: 
     elif fmt == 'CSV':
         print("Action: Using CSV Parser")
         entries = parsers.parse_csv(raw_text)
+    elif fmt == 'XML': # 👈 Ensure this block exists!
+        entries = parsers.parse_xml(raw_text)
     else:
         print(f"ERROR: Unsupported format '{fmt}'")
         return 0

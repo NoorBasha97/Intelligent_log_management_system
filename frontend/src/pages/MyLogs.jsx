@@ -17,7 +17,7 @@ export default function MyLogs() {
 
   useEffect(() => { 
     fetchFiles(); 
-    setCurrentPage(1); // Reset to first page when switching scope
+    setCurrentPage(1); 
   }, [scope]);
 
   const fetchFiles = async () => {
@@ -45,18 +45,37 @@ export default function MyLogs() {
 
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
-    if (!uploadForm.team_id || !uploadForm.file) return;
+    if (!uploadForm.team_id || !uploadForm.file) {
+      alert("Please select both a team and a file.");
+      return;
+    };
+
+    const file = uploadForm.file;
+    const ext = file.name.split('.').pop().toLowerCase();
+    
+    // 🔥 FIXED: Robust format detection for the Modal upload
+    let formatId = 1; 
+    if (ext === 'json') formatId = 3;
+    else if (ext === 'csv') formatId = 4;
+    else if (ext === 'xml') formatId = 5;
+
     const formData = new FormData();
-    formData.append('file', uploadForm.file);
-    const formatId = uploadForm.file.name.endsWith('.json') ? 3 : 1;
+    formData.append('file', file);
     setUploading(true);
+
     try {
-      await api.post(`/files/upload?team_id=${uploadForm.team_id}&format_id=${formatId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await api.post(`/files/upload?team_id=${uploadForm.team_id}&format_id=${formatId}`, formData, { 
+        headers: { 'Content-Type': 'multipart/form-data' } 
+      });
+      alert("✅ Upload and parsing successful!");
       setIsModalOpen(false); 
       setUploadForm({ team_id: '', file: null });
       fetchFiles();
-    } catch (err) { alert("Upload failed"); }
-    setUploading(false);
+    } catch (err) { 
+      alert("Upload failed: " + (err.response?.data?.detail || "Server Error")); 
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -66,21 +85,6 @@ export default function MyLogs() {
     }
   };
 
-  const handleFileChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const ext = file.name.split('.').pop().toLowerCase();
-  
-  // 🔥 CRITICAL: Match these IDs to your database 'file_formats' table
-  let formatId = 1; // Default for .log or .txt
-  if (ext === 'json') formatId = 3;
-  if (ext === 'csv') formatId = 4; // Ensure 4 is CSV in your DB
-  if (ext === 'xml') formatId = 5;
-
-  console.log(`Uploading ${file.name} as Format ID: ${formatId}`);
-  // ... rest of your upload logic
-};
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen text-slate-900 font-sans">
       {/* --- HEADER --- */}
@@ -230,13 +234,14 @@ export default function MyLogs() {
               <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full"><X size={20} /></button>
             </div>
 
-            <div className="space-y-4">
+            <form onSubmit={handleUploadSubmit} className="space-y-4">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Target Team Context</label>
                 <select 
                   className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer" 
                   value={uploadForm.team_id} 
                   onChange={(e) => setUploadForm({...uploadForm, team_id: e.target.value})}
+                  required
                 >
                   <option value="">Select a team...</option>
                   {userTeams.map(t => <option key={t.team_id} value={t.team_id}>{t.team_name}</option>)}
@@ -248,17 +253,18 @@ export default function MyLogs() {
                 <input 
                   type="file" 
                   onChange={(e) => setUploadForm({...uploadForm, file: e.target.files[0]})} 
-                  className="text-sm block w-full text-slate-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-none file:text-xs file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer file:transition-all" 
+                  className="text-sm block w-full text-slate-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-none file:text-xs file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer file:transition-all"
+                  required 
                 />
               </div>
-            </div>
 
-            <div className="flex gap-4 pt-4">
-              <button onClick={handleUploadSubmit} disabled={uploading} className="flex-1 py-3.5 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex justify-center items-center gap-2 disabled:opacity-50">
-                {uploading ? <Loader2 className="animate-spin" size={20}/> : <Upload size={18}/>}
-                UPLOAD NOW
-              </button>
-            </div>
+              <div className="pt-4">
+                <button type="submit" disabled={uploading} className="w-full py-3.5 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex justify-center items-center gap-2 disabled:opacity-50">
+                  {uploading ? <Loader2 className="animate-spin" size={20}/> : <Upload size={18}/>}
+                  UPLOAD NOW
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

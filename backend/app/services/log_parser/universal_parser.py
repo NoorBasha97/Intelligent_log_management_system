@@ -130,15 +130,39 @@ def parse_csv_log(text):
     return results
 
 
-def parse_xml_log(text, lookups):
+def parse_xml_log(text): # Renamed to parse_xml to match your manager.py
     results = []
-    root = ET.fromstring(text)
-    # Assumes structure: <logs><log><timestamp>...</timestamp>...</log></logs>
-    for log in root.findall('log'):
-        results.append({
-            "timestamp": datetime.strptime(log.find('timestamp').text, "%Y-%m-%d %H:%M:%S"),
-            "severity": log.find('severity').text.upper(),
-            "service": log.find('service').text if log.find('service') is not None else "XML-SVC",
-            "message": log.find('message').text
-        })
+    try:
+        # 1. Parse the string into an XML tree
+        # Use strip() to remove any hidden whitespace at start of file
+        root = ET.fromstring(text.strip())
+        
+        # 2. Look for <log> tags
+        # We use './/log' to find log entries even if they are nested
+        for log in root.findall('.//log'):
+            try:
+                # Find nodes safely
+                ts_node = log.find('timestamp')
+                sev_node = log.find('severity')
+                msg_node = log.find('message')
+                svc_node = log.find('service')
+
+                # Skip this entry if critical data is missing
+                if ts_node is None or msg_node is None:
+                    print(f"DEBUG: XML Log entry missing timestamp or message. Skipping.")
+                    continue
+
+                results.append({
+                    "timestamp": datetime.strptime(ts_node.text.strip(), "%Y-%m-%d %H:%M:%S"),
+                    "severity": sev_node.text.strip().upper() if sev_node is not None else "INFO",
+                    "service": svc_node.text.strip() if svc_node is not None else "XML-SVC",
+                    "message": msg_node.text.strip()
+                })
+            except Exception as row_err:
+                print(f"DEBUG: Error parsing single XML row: {row_err}")
+                continue
+
+    except Exception as e:
+        print(f"CRITICAL: XML structure is invalid: {e}")
+        
     return results
