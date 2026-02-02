@@ -13,7 +13,7 @@ export default function LogManagement() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const logsPerPage = 10;
+  const logsPerPage = 8;
 
   // 🔥 Fixed keys to match Backend expectations
   const initialFilters = {
