@@ -167,8 +167,7 @@ def manual_archive_file(
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     
-    
-    # backend/app/api/routes/file_routes.py
+
 
 @router.get("/me", response_model=FileListResponse)
 def get_user_files(

@@ -3,7 +3,7 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_active_user
-from app.schemas.auth import LoginHistoryList, LoginRequest, Token, PasswordChangeRequest
+from app.schemas.auth import LoginHistoryList, LoginRequest, Token
 from app.services.auth_service import AuthService
 from app.models.login_history import UserLoginHistory
 from app.models.user import User
@@ -45,35 +45,6 @@ def login(
         )
 
 
-# -------------------------
-# Change password
-# -------------------------
-@router.post(
-    "/change-password",
-    status_code=status.HTTP_204_NO_CONTENT
-)
-def change_password(
-    payload: PasswordChangeRequest,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_active_user)
-):
-    """
-    Change password for authenticated user.
-    """
-    try:
-        AuthService.change_password(
-            db,
-            user=current_user,
-            old_password=payload.old_password,
-            new_password=payload.new_password
-        )
-        return None
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc)
-        )
-        
 
 @router.get("/login-history/me", response_model=LoginHistoryList)
 def get_my_login_history(
