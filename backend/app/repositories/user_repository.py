@@ -97,20 +97,31 @@ class UserRepository:
     # -------------------------
     # List users
     # -------------------------
+    # @staticmethod
+    # def list_users(
+    #     db: Session,
+    #     *,
+    #     limit: int = 50,
+    #     offset: int = 0
+    # ) -> List[User]:
+    #     return (
+    #         db.query(User)
+    #         .order_by(User.created_at.desc())
+    #         .limit(limit)
+    #         .offset(offset)
+    #         .all()
+    #     )
+    
     @staticmethod
-    def list_users(
-        db: Session,
-        *,
-        limit: int = 50,
-        offset: int = 0
-    ) -> List[User]:
+    def list_users(db: Session, limit: int = 50, offset: int = 0):
         return (
             db.query(User)
+            .filter(User.is_deleted == False) # Only show active/inactive, not deleted
             .order_by(User.created_at.desc())
-            .limit(limit)
             .offset(offset)
+            .limit(limit)
             .all()
-        )
+    )
 
     # -------------------------
     # Update user

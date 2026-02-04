@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import api from '../api/axios';
 import {
   Upload, FileText, Trash2, Search, Calendar,
-  Filter, Loader2, RotateCcw, Users as TeamIcon, 
+  Filter, Loader2, RotateCcw, Users as TeamIcon,
   Archive as ArchiveIcon, CheckCircle, ChevronLeft, ChevronRight // Added Chevron icons
 } from 'lucide-react';
 
@@ -10,7 +10,7 @@ export default function FileManagement() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [teams, setTeams] = useState([]); 
+  const [teams, setTeams] = useState([]);
   const fileInputRef = useRef(null);
   const [currentUserTeamId, setCurrentUserTeamId] = useState(null);
 
@@ -70,7 +70,7 @@ export default function FileManagement() {
     const file = e.target.files[0];
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
-    let formatId = 1; 
+    let formatId = 1;
     if (ext === 'json') formatId = 3;
     if (ext === 'csv') formatId = 4;
     if (ext === 'xml') formatId = 5;
@@ -83,12 +83,12 @@ export default function FileManagement() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert("File uploaded and parsed successfully!");
-      fetchFiles(); 
+      fetchFiles();
     } catch (err) {
       alert("Upload failed: " + (err.response?.data?.detail || "Server Error"));
     } finally {
       setUploading(false);
-      e.target.value = null; 
+      e.target.value = null;
     }
   };
 
@@ -107,13 +107,13 @@ export default function FileManagement() {
 
   const archiveFile = async (id) => {
     if (window.confirm("Manual Archive: Are you sure you want to archive this file now?")) {
-        try {
-            await api.patch(`/files/${id}/archive`);
-            alert("File successfully moved to archives.");
-            fetchFiles(); 
-        } catch (err) {
-            alert("Archive failed: " + (err.response?.data?.detail || "Error"));
-        }
+      try {
+        await api.patch(`/files/${id}/archive`);
+        alert("File successfully moved to archives.");
+        fetchFiles();
+      } catch (err) {
+        alert("Archive failed: " + (err.response?.data?.detail || "Error"));
+      }
     }
   };
 
@@ -227,20 +227,22 @@ export default function FileManagement() {
                   <td className="p-4 font-mono text-xs text-slate-400">#{f.file_id}</td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-700">{f.original_name}</span>
-                        {f.is_archived && <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Archived</span>}
+                      <span className="font-semibold text-slate-700">{f.original_name}</span>
+                      {f.is_archived && <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Archived</span>}
                     </div>
                   </td>
-                  <td className="p-4 text-slate-600">{f.uploader_name || 'System'}</td>
+                  <td className="p-4 text-slate-600">
+                    {f.uploader_name ? f.uploader_name : <span className="text-slate-400 italic">Deleted User</span>}
+                  </td>
                   <td className="p-4 font-bold text-indigo-600 text-xs">{f.team_name || 'Global'}</td>
                   <td className="p-4 text-slate-500">{(f.file_size_bytes / 1024).toFixed(1)} KB</td>
                   <td className="p-4 flex items-center justify-center gap-3">
                     {!f.is_archived ? (
-                        <button onClick={() => archiveFile(f.file_id)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Archive Now">
-                            <ArchiveIcon size={16} />
-                        </button>
+                      <button onClick={() => archiveFile(f.file_id)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Archive Now">
+                        <ArchiveIcon size={16} />
+                      </button>
                     ) : (
-                        <div className="p-2 text-green-500" title="Archived"><CheckCircle size={16} /></div>
+                      <div className="p-2 text-green-500" title="Archived"><CheckCircle size={16} /></div>
                     )}
                     <button onClick={() => deleteFile(f.file_id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete Permanently">
                       <Trash2 size={16} />

@@ -146,9 +146,17 @@ class UserService:
     # -------------------------
     # permanent delete user (ADMIN)
     # -------------------------
+    # @staticmethod
+    # def delete_user(
+    #     db: Session,
+    #     user: User
+    # ) -> None:
+    #     UserRepository.permanent_delete_user(db, user)
+    
     @staticmethod
-    def delete_user(
-        db: Session,
-        user: User
-    ) -> None:
-        UserRepository.permanent_delete_user(db, user)
+    def delete_user(db: Session, user: User) -> None:
+    # Instead of db.delete(user)
+        user.is_deleted = True
+        user.is_active = False # Deactivate their login
+        db.commit()
+    # Now the user is still in the DB, but cannot log in.
