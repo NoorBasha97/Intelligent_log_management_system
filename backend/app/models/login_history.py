@@ -32,3 +32,4 @@ class UserLoginHistory(Base):
     status = Column(
         Boolean
     )
+    user = relationship("User")

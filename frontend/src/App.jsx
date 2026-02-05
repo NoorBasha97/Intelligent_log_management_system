@@ -19,6 +19,7 @@ import UserDashboard from './pages/UserDashboard';
 import LoginHistory from './pages/LoginHistory';
 import AuditTrail from './pages/AuditTrail';
 import LandingPage from './pages/LandingPage';
+import LoginAudit from './pages/LoginAudit';
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="users" element={<UserManagement />} />
           <Route path="files" element={<FileManagement />} />
           <Route path="logs" element={<LogManagement />} />
+          <Route path="login-audits" element={<LoginAudit />} />
           <Route path="audit" element={<AuditTrail />} />
         </Route>
 

@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_active_user
+from app.api.deps import get_db, get_active_user, require_permission
 from app.schemas.auth import LoginHistoryList, LoginRequest, Token
 from app.services.auth_service import AuthService
 from app.models.login_history import UserLoginHistory
 from app.models.user import User
-
+from sqlalchemy.orm import joinedload
 
 router = APIRouter(
     prefix="/auth",
@@ -61,3 +61,32 @@ def get_my_login_history(
     
     return {"total": total, "items": items}
 
+
+# backend/app/api/routes/auth_routes.py
+
+@router.get("/login-history/all", response_model=LoginHistoryList)
+def get_all_login_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_permission("MANAGE_USERS")),
+    limit: int = 100,
+    offset: int = 0
+):
+    # Fetch History and Join User automatically
+    query = db.query(UserLoginHistory).options(joinedload(UserLoginHistory.user))
+    
+    total = query.count()
+    
+    # Get the items
+    db_items = query.order_by(UserLoginHistory.login_time.desc()).offset(offset).limit(limit).all()
+
+    # Manually build the response list to ensure username is mapped correctly
+    items = []
+    for item in db_items:
+        items.append({
+            "login_id": item.login_id,
+            "login_time": item.login_time,
+            "status": item.status,
+            "username": item.user.username if item.user else "Deleted User"
+        })
+
+    return {"total": total, "items": items}

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import List
 
 # =========================
@@ -44,10 +44,31 @@ class AccountStatusResponse(BaseModel):
     failed_attempts: int
 
 
+# class LoginHistoryResponse(BaseModel):
+#     login_id: int
+#     login_time: datetime
+#     status: bool
+
+#     class Config:
+#         from_attributes = True
+
 class LoginHistoryResponse(BaseModel):
     login_id: int
     login_time: datetime
     status: bool
+    username: Optional[str] = "Unknown" # Default value
+
+    # 🔥 This logic pulls the username from the User relationship
+    @field_validator("username", mode="before")
+    @classmethod
+    def get_username(cls, v, info):
+        # If 'user' object exists in the database row, get its username
+        if hasattr(info.data, 'user') and info.data.user:
+            return info.data.user.username
+        # If manual dictionary mapping was used
+        if isinstance(v, str):
+            return v
+        return "Deleted User"
 
     class Config:
         from_attributes = True
