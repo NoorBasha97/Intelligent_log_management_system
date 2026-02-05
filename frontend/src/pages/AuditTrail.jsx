@@ -122,40 +122,31 @@ export default function AuditTrail() {
         </div>
 
         {/* Pagination Controls */}
-        {!loading && logs.length > itemsPerPage && (
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-t border-slate-200">
-            <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700">{indexOfFirstItem + 1}</span> to <span className="text-slate-700">{Math.min(indexOfLastItem, logs.length)}</span> of <span className="text-slate-700">{logs.length}</span> events
-            </div>
-            <div className="flex gap-2">
+         {!loading && logs.length > itemsPerPage && (
+          <div className="bg-slate-50 px-6 py-4 flex items-center justify-between border-t border-slate-200">
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">
+              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, logs.length)} of {logs.length} events
+            </p>
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={() => setCurrentPage(p => p - 1)}
+                className="p-1.5 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 transition-all shadow-sm"
               >
-                <ChevronLeft size={16} className="text-slate-600" />
+                <ChevronLeft size={18} className="text-slate-600" />
               </button>
-              <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-3.5 py-1 rounded-lg border text-sm font-bold transition-all ${
-                      currentPage === i + 1 
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' 
-                        : 'bg-white text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
+              
+              {/* Page indicator text */}
+              <span className="text-sm font-bold text-slate-600 px-4">
+                {currentPage} / {totalPages}
+              </span>
+
               <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={() => setCurrentPage(p => p + 1)}
+                className="p-1.5 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 transition-all shadow-sm"
               >
-                <ChevronRight size={16} className="text-slate-600" />
+                <ChevronRight size={18} className="text-slate-600" />
               </button>
             </div>
           </div>

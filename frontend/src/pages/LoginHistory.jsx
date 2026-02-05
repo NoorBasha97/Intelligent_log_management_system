@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { 
-  ShieldCheck, ShieldAlert, Clock, Loader2, History, 
+import {
+  ShieldCheck, ShieldAlert, Clock, Loader2, History,
   ChevronLeft, ChevronRight // Added for pagination
 } from 'lucide-react';
 
@@ -79,18 +79,17 @@ export default function LoginHistory() {
                       </div>
                     </td>
                     <td className="p-4 text-center">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                        item.status 
-                        ? 'bg-green-50 text-green-700 border-green-200' 
-                        : 'bg-red-50 text-red-700 border-red-200'
-                      }`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border ${item.status
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-red-50 text-red-700 border-red-200'
+                        }`}>
                         {item.status ? <ShieldCheck size={12} /> : <ShieldAlert size={12} />}
                         {item.status ? "SUCCESSFUL" : "FAILED"}
                       </span>
                     </td>
                     <td className="p-4 text-slate-500">
-                      {item.status 
-                        ? "Authorization granted via token" 
+                      {item.status
+                        ? "Authorization granted via token"
                         : "Attempt denied: Invalid credentials or locked account"}
                     </td>
                   </tr>
@@ -101,38 +100,35 @@ export default function LoginHistory() {
         </div>
 
         {/* Pagination Footer */}
+        {/* --- UPDATED PAGINATION FOOTER (Login Audit Style) --- */}
         {!loading && history.length > itemsPerPage && (
           <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+            {/* Left side: Item Range Summary */}
             <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700">{indexOfFirstItem + 1}</span> to <span className="text-slate-700">{Math.min(indexOfLastItem, history.length)}</span> of <span className="text-slate-700">{history.length}</span> attempts
+              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, history.length)}</span> of <span className="text-slate-700 font-bold">{history.length}</span> attempts
             </div>
-            <div className="flex gap-2">
+
+            {/* Right side: Minimal Navigation */}
+            <div className="flex items-center gap-2">
+              {/* Previous Button */}
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
                 <ChevronLeft size={18} className="text-slate-600" />
               </button>
-              <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i + 1}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-9 h-9 rounded-lg border text-xs font-bold transition-all ${
-                      currentPage === i + 1 
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' 
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
+
+              {/* Page / Total Display */}
+              <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
+                {currentPage} / {totalPages}
+              </span>
+
+              {/* Next Button */}
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
                 <ChevronRight size={18} className="text-slate-600" />
               </button>

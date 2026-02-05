@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { 
-  Trash2, Search, Calendar, Filter, 
+import {
+  Trash2, Search, Calendar, Filter,
   Loader2, RotateCcw, Terminal, SlidersHorizontal,
   ChevronLeft, ChevronRight // Added for pagination
 } from 'lucide-react';
@@ -20,9 +20,9 @@ export default function LogManagement() {
     search: '',
     start_date: '',
     end_date: '',
-    severity_code: '',      
-    environment_code: '',   
-    category_name: '',      
+    severity_code: '',
+    environment_code: '',
+    category_name: '',
     team_id: ''
   };
 
@@ -32,7 +32,7 @@ export default function LogManagement() {
     fetchTeams();
     fetchLogs();
     setCurrentPage(1); // Reset to page 1 when filters change
-  }, [filters]); 
+  }, [filters]);
 
   const fetchTeams = async () => {
     try {
@@ -50,8 +50,8 @@ export default function LogManagement() {
 
       const res = await api.get('/logs', { params: cleanedParams });
       setLogs(res.data?.items || []);
-    } catch (err) { 
-      console.error("API Error", err); 
+    } catch (err) {
+      console.error("API Error", err);
       setLogs([]);
     }
     setLoading(false);
@@ -102,24 +102,24 @@ export default function LogManagement() {
             <label className={labelClass}>Keyword Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-3 text-slate-400" size={18} />
-              <input 
+              <input
                 placeholder="Search message content..."
                 className={`${inputClass} pl-10`}
                 value={filters.search}
-                onChange={(e) => setFilters({...filters, search: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
               />
             </div>
           </div>
           <div>
             <label className={labelClass}>Team</label>
-            <select className={inputClass} value={filters.team_id} onChange={(e) => setFilters({...filters, team_id: e.target.value})}>
+            <select className={inputClass} value={filters.team_id} onChange={(e) => setFilters({ ...filters, team_id: e.target.value })}>
               <option value="">All Teams</option>
               {teams.map(t => <option key={t.team_id} value={t.team_id}>{t.team_name}</option>)}
             </select>
           </div>
           <div>
             <label className={labelClass}>Environment</label>
-            <select className={inputClass} value={filters.environment_code} onChange={(e) => setFilters({...filters, environment_code: e.target.value})}>
+            <select className={inputClass} value={filters.environment_code} onChange={(e) => setFilters({ ...filters, environment_code: e.target.value })}>
               <option value="">All Environments</option>
               <option value="DEV">DEV</option>
               <option value="PROD">PROD</option>
@@ -131,15 +131,15 @@ export default function LogManagement() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end border-t pt-4 border-slate-50">
           <div>
             <label className={labelClass}>From Date</label>
-            <input type="date" className={inputClass} value={filters.start_date} onChange={(e) => setFilters({...filters, start_date: e.target.value})} />
+            <input type="date" className={inputClass} value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} />
           </div>
           <div>
             <label className={labelClass}>To Date</label>
-            <input type="date" className={inputClass} value={filters.end_date} onChange={(e) => setFilters({...filters, end_date: e.target.value})} />
+            <input type="date" className={inputClass} value={filters.end_date} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} />
           </div>
           <div>
             <label className={labelClass}>Severity</label>
-            <select className={inputClass} value={filters.severity_code} onChange={(e) => setFilters({...filters, severity_code: e.target.value})}>
+            <select className={inputClass} value={filters.severity_code} onChange={(e) => setFilters({ ...filters, severity_code: e.target.value })}>
               <option value="">All Severities</option>
               <option value="ERROR">ERROR</option>
               <option value="WARN">WARN</option>
@@ -192,36 +192,35 @@ export default function LogManagement() {
         </div>
 
         {/* Pagination Controls */}
-        {logs.length > logsPerPage && (
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-t border-slate-200">
-            <div className="text-sm text-slate-500">
-              Showing <span className="font-medium">{indexOfFirstLog + 1}</span> to <span className="font-medium">{Math.min(indexOfLastLog, logs.length)}</span> of <span className="font-medium">{logs.length}</span> entries
+        {/* --- UPDATED PAGINATION FOOTER (Login Audit Style) --- */}
+        {!loading && logs.length > logsPerPage && (
+          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+            {/* Left side: Range Info */}
+            <div className="text-sm text-slate-500 font-medium">
+              Showing <span className="text-slate-700 font-bold">{indexOfFirstLog + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastLog, logs.length)}</span> of <span className="text-slate-700 font-bold">{logs.length}</span> entries
             </div>
-            <div className="flex gap-2">
+
+            {/* Right side: Navigation */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded border bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                <ChevronLeft size={16} />
+                <ChevronLeft size={18} className="text-slate-600" />
               </button>
-              <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-3 py-1 rounded border text-sm font-bold transition-all ${currentPage === i + 1 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
+
+              {/* Page indicator text instead of numbers */}
+              <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
+                {currentPage} / {totalPages}
+              </span>
+
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded border bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={18} className="text-slate-600" />
               </button>
             </div>
           </div>

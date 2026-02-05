@@ -255,36 +255,35 @@ export default function FileManagement() {
         </div>
 
         {/* Pagination Controls */}
-        {files.length > itemsPerPage && (
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-t border-slate-200">
+        {/* --- UPDATED PAGINATION FOOTER (Login Audit Style) --- */}
+        {!loading && files.length > itemsPerPage && (
+          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+            {/* Left side: Item Range Info */}
             <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700">{indexOfFirstItem + 1}</span> to <span className="text-slate-700">{Math.min(indexOfLastItem, files.length)}</span> of <span className="text-slate-700">{files.length}</span> files
+              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, files.length)}</span> of <span className="text-slate-700 font-bold">{files.length}</span> files
             </div>
-            <div className="flex gap-2">
+
+            {/* Right side: Navigation Controls */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                <ChevronLeft size={16} className="text-slate-600" />
+                <ChevronLeft size={18} className="text-slate-600" />
               </button>
-              <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-3.5 py-1 rounded-lg border text-sm font-bold transition-all ${currentPage === i + 1 ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
+
+              {/* Modern Page Indicator */}
+              <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
+                {currentPage} / {totalPages}
+              </span>
+
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                <ChevronRight size={16} className="text-slate-600" />
+                <ChevronRight size={18} className="text-slate-600" />
               </button>
             </div>
           </div>

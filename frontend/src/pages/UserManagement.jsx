@@ -11,14 +11,14 @@ export default function UserManagement() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 10;
+  const usersPerPage = 7;
 
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   const [formData, setFormData] = useState({
     first_name: "",
-    last_name: "", 
+    last_name: "",
     phone_no: "",
     email: "",
     username: "",
@@ -123,7 +123,7 @@ export default function UserManagement() {
                 </td>
                 <td className="p-4">
                   <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium uppercase">
-                    {u.user_role}   
+                    {u.user_role}
                   </span>
                 </td>
                 <td className="p-4">
@@ -151,36 +151,41 @@ export default function UserManagement() {
         </table>
 
         {/* Pagination Controls */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-t border-slate-200">
-          <div className="text-sm text-slate-500">
-            Showing <span className="font-medium">{indexOfFirstUser + 1}</span> to <span className="font-medium">{Math.min(indexOfLastUser, users.length)}</span> of <span className="font-medium">{users.length}</span> users
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="p-2 rounded border bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            {[...Array(totalPages)].map((_, i) => (
+        {/* --- UPDATED PAGINATION FOOTER (Login Audit Style) --- */}
+        {!loading && users.length > usersPerPage && (
+          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+            {/* Left side: Range Summary */}
+            <div className="text-sm text-slate-500 font-medium">
+              Showing <span className="text-slate-700 font-bold">{indexOfFirstUser + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastUser, users.length)}</span> of <span className="text-slate-700 font-bold">{users.length}</span> users
+            </div>
+
+            {/* Right side: Minimalist Navigation */}
+            <div className="flex items-center gap-2">
+              {/* Previous Button */}
               <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`px-3 py-1 rounded border text-sm font-medium transition ${currentPage === i + 1 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 hover:bg-slate-50'}`}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
-                {i + 1}
+                <ChevronLeft size={18} />
               </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="p-2 rounded border bg-white hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronRight size={16} />
-            </button>
+
+              {/* Page Display */}
+              <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
+                {currentPage} / {totalPages}
+              </span>
+
+              {/* Next Button */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <UpdateUserModal

@@ -12,7 +12,7 @@ export default function ViewLogs() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 7;
 
   const initialFilters = {
     search: '',
@@ -170,46 +170,39 @@ export default function ViewLogs() {
         </div>
 
         {/* --- PAGINATION CONTROLS --- */}
-        {!loading && entries.length > itemsPerPage && (
-          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-            <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, entries.length)}</span> of <span className="text-slate-700 font-bold">{entries.length}</span> logs
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-              >
-                <ChevronLeft size={18} className="text-slate-600" />
-              </button>
-              
-              <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i + 1}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-9 h-9 rounded-lg border text-xs font-bold transition-all ${
-                      currentPage === i + 1 
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' 
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border-slate-200'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
+        {/* --- UPDATED PAGINATION FOOTER (Minimalist Style) --- */}
+{!loading && entries.length > itemsPerPage && (
+  <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+    {/* Left side: Range Info */}
+    <div className="text-sm text-slate-500 font-medium">
+      Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, entries.length)}</span> of <span className="text-slate-700 font-bold">{entries.length}</span> logs
+    </div>
 
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
-              >
-                <ChevronRight size={18} className="text-slate-600" />
-              </button>
-            </div>
-          </div>
-        )}
+    {/* Right side: Navigation */}
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+        disabled={currentPage === 1}
+        className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+      >
+        <ChevronLeft size={18} className="text-slate-600" />
+      </button>
+
+      {/* Page Display */}
+      <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
+        {currentPage} / {totalPages}
+      </span>
+
+      <button
+        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+        disabled={currentPage === totalPages}
+        className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
+      >
+        <ChevronRight size={18} className="text-slate-600" />
+      </button>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );

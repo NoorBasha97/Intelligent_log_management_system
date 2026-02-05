@@ -13,11 +13,11 @@ export default function MyLogs() {
 
   // --- Pagination State ---
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8;
+  const itemsPerPage = 7;
 
-  useEffect(() => { 
-    fetchFiles(); 
-    setCurrentPage(1); 
+  useEffect(() => {
+    fetchFiles();
+    setCurrentPage(1);
   }, [scope]);
 
   const fetchFiles = async () => {
@@ -52,9 +52,9 @@ export default function MyLogs() {
 
     const file = uploadForm.file;
     const ext = file.name.split('.').pop().toLowerCase();
-    
+
     // 🔥 FIXED: Robust format detection for the Modal upload
-    let formatId = 1; 
+    let formatId = 1;
     if (ext === 'json') formatId = 3;
     else if (ext === 'csv') formatId = 4;
     else if (ext === 'xml') formatId = 5;
@@ -64,15 +64,15 @@ export default function MyLogs() {
     setUploading(true);
 
     try {
-      await api.post(`/files/upload?team_id=${uploadForm.team_id}&format_id=${formatId}`, formData, { 
-        headers: { 'Content-Type': 'multipart/form-data' } 
+      await api.post(`/files/upload?team_id=${uploadForm.team_id}&format_id=${formatId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert("✅ Upload and parsing successful!");
-      setIsModalOpen(false); 
+      setIsModalOpen(false);
       setUploadForm({ team_id: '', file: null });
       fetchFiles();
-    } catch (err) { 
-      alert("Upload failed: " + (err.response?.data?.detail || "Server Error")); 
+    } catch (err) {
+      alert("Upload failed: " + (err.response?.data?.detail || "Server Error"));
     } finally {
       setUploading(false);
     }
@@ -112,17 +112,15 @@ export default function MyLogs() {
           <div className="inline-flex p-1 bg-slate-200 rounded-xl shadow-inner">
             <button
               onClick={() => setScope('me')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
-                scope === 'me' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
-              }`}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${scope === 'me' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                }`}
             >
               <User size={16} /> Personal
             </button>
             <button
               onClick={() => setScope('team')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${
-                scope === 'team' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
-              }`}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${scope === 'team' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                }`}
             >
               <Users size={16} /> Team
             </button>
@@ -168,7 +166,7 @@ export default function MyLogs() {
                       {new Date(file.uploaded_at).toLocaleDateString()}
                     </td>
                     <td className="p-5 text-center">
-                      <button 
+                      <button
                         onClick={() => handleDelete(file.file_id)}
                         className="p-2.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
                       >
@@ -183,40 +181,35 @@ export default function MyLogs() {
         </div>
 
         {/* --- PAGINATION FOOTER --- */}
-        {!loading && files.length > 0 && (
+        {/* --- UPDATED PAGINATION FOOTER (Minimalist Style) --- */}
+        {!loading && files.length > itemsPerPage && (
           <div className="bg-slate-50/50 px-6 py-4 flex items-center justify-between border-t border-slate-100">
+            {/* Left side: Range Info */}
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
               Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, files.length)} of {files.length} Files
             </p>
+
+            {/* Right side: Navigation */}
             <div className="flex items-center gap-2">
+              {/* Previous Button */}
               <button
                 disabled={currentPage === 1}
-                onClick={() => setCurrentPage(prev => prev - 1)}
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
                 <ChevronLeft size={18} />
               </button>
-              
-              <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i + 1}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-9 h-9 rounded-xl text-xs font-black transition-all ${
-                      currentPage === i + 1 
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' 
-                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                ))}
-              </div>
 
+              {/* Page / Total Display */}
+              <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
+                {currentPage} / {totalPages}
+              </span>
+
+              {/* Next Button */}
               <button
                 disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(prev => prev + 1)}
-                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
               >
                 <ChevronRight size={18} />
               </button>
@@ -237,10 +230,10 @@ export default function MyLogs() {
             <form onSubmit={handleUploadSubmit} className="space-y-4">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Target Team Context</label>
-                <select 
-                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer" 
-                  value={uploadForm.team_id} 
-                  onChange={(e) => setUploadForm({...uploadForm, team_id: e.target.value})}
+                <select
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer"
+                  value={uploadForm.team_id}
+                  onChange={(e) => setUploadForm({ ...uploadForm, team_id: e.target.value })}
                   required
                 >
                   <option value="">Select a team...</option>
@@ -250,17 +243,17 @@ export default function MyLogs() {
 
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Select Source File</label>
-                <input 
-                  type="file" 
-                  onChange={(e) => setUploadForm({...uploadForm, file: e.target.files[0]})} 
+                <input
+                  type="file"
+                  onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })}
                   className="text-sm block w-full text-slate-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-none file:text-xs file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer file:transition-all"
-                  required 
+                  required
                 />
               </div>
 
               <div className="pt-4">
                 <button type="submit" disabled={uploading} className="w-full py-3.5 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex justify-center items-center gap-2 disabled:opacity-50">
-                  {uploading ? <Loader2 className="animate-spin" size={20}/> : <Upload size={18}/>}
+                  {uploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={18} />}
                   UPLOAD NOW
                 </button>
               </div>
