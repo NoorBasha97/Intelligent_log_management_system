@@ -8,7 +8,8 @@ from app.schemas.raw_file import RawFileResponse
 from app.services.file_storage import save_file_locally
 from app.services.log_parser.manager import parse_and_store_logs # Updated import
 from app.api.deps import get_active_user, get_current_user
-from app.models.user import User # Ensure correct path
+from app.models.user import User
+from app.models.log_entries import Environment # Ensure correct path
 
 router = APIRouter(prefix="/files", tags=["File Upload"])
 
@@ -21,6 +22,7 @@ def get_db():
 def upload_file(
     team_id: int,
     format_id: int,
+    environment_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user : User = Depends(get_active_user) # 'user' is an object, not a Session
@@ -44,6 +46,11 @@ def upload_file(
     fmt = db.query(FileFormat).filter(FileFormat.format_id == format_id).first()
     if not fmt:
         raise HTTPException(status_code=400, detail="Invalid format_id")
+    
+     # 2. 🔥 Identify Environment Code
+    env = db.query(Environment).filter(Environment.environment_id == environment_id).first()
+    if not env:
+        raise HTTPException(status_code=400, detail="Invalid environment_id")
 
     # 2. Save file locally
     file_path, file_size = save_file_locally(team_id, file)
@@ -69,7 +76,7 @@ def upload_file(
             file_id=raw_file.file_id,
             raw_text=raw_text,
             format_name=fmt.format_name, # Key fix: Pass format name
-            environment_code="DEV"
+            environment_code=env.environment_code
         )
         
         db.flush()

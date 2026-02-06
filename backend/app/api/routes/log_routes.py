@@ -16,7 +16,7 @@ from app.services.log_service import LogService
 from app.models.log_entries import LogEntry
 from app.repositories.log_repository import LogRepository
 from app.models.raw_file import RawFile
-
+from pydantic import BaseModel
 
 router = APIRouter(
     prefix="/logs",
@@ -296,3 +296,19 @@ def get_user_log_entries(
     )
     
     return {"total": total, "items": items}
+
+
+# Define a simple schema for the response
+class EnvironmentResponse(BaseModel):
+    environment_id: int
+    environment_code: str
+    description: str | None
+
+    class Config:
+        from_attributes = True
+
+# Add this route
+@router.get("/environments", response_model=list[EnvironmentResponse])
+def get_environments(db: Session = Depends(get_db)):
+    from app.models.log_entries import Environment # Import your Environment model
+    return db.query(Environment).all()

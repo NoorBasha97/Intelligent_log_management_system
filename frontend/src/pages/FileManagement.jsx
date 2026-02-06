@@ -168,6 +168,7 @@ export default function FileManagement() {
             <select className={`${inputClass} w-full`} value={filters.environment} onChange={(e) => setFilters({ ...filters, environment: e.target.value })}>
               <option value="">All</option>
               <option value="DEV">DEV</option>
+              <option value="QA">QA</option>
               <option value="PROD">PROD</option>
               <option value="STAGING">STAGING</option>
             </select>

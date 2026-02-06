@@ -96,61 +96,38 @@ export default function LogManagement() {
       </div>
 
       {/* --- FILTER BAR --- */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-2">
-            <label className={labelClass}>Keyword Search</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-3 text-slate-400" size={18} />
-              <input
-                placeholder="Search message content..."
-                className={`${inputClass} pl-10`}
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              />
-            </div>
-          </div>
-          <div>
-            <label className={labelClass}>Team</label>
-            <select className={inputClass} value={filters.team_id} onChange={(e) => setFilters({ ...filters, team_id: e.target.value })}>
-              <option value="">All Teams</option>
-              {teams.map(t => <option key={t.team_id} value={t.team_id}>{t.team_name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelClass}>Environment</label>
-            <select className={inputClass} value={filters.environment_code} onChange={(e) => setFilters({ ...filters, environment_code: e.target.value })}>
-              <option value="">All Environments</option>
-              <option value="DEV">DEV</option>
-              <option value="PROD">PROD</option>
-              <option value="QA">QA</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-end border-t pt-4 border-slate-50">
-          <div>
-            <label className={labelClass}>From Date</label>
-            <input type="date" className={inputClass} value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} />
-          </div>
-          <div>
-            <label className={labelClass}>To Date</label>
-            <input type="date" className={inputClass} value={filters.end_date} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} />
-          </div>
-          <div>
-            <label className={labelClass}>Severity</label>
-            <select className={inputClass} value={filters.severity_code} onChange={(e) => setFilters({ ...filters, severity_code: e.target.value })}>
-              <option value="">All Severities</option>
-              <option value="ERROR">ERROR</option>
-              <option value="WARN">WARN</option>
-              <option value="INFO">INFO</option>
-            </select>
-          </div>
-          <button onClick={clearFilters} className="flex items-center justify-center gap-2 h-[42px] font-bold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 border border-indigo-200 transition-all">
-            <RotateCcw size={16} /> Reset Filters
-          </button>
-        </div>
-      </div>
+     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+             <div className="flex items-center gap-2 text-slate-800 font-semibold border-b border-slate-50 pb-4">
+               <SlidersHorizontal size={18} className="text-indigo-600" />
+               <span>Search & Filter</span>
+             </div>
+     
+             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end border-t border-slate-50 mt-4 pt-4">
+               <div>
+                 <label className={labelClass}>From Date</label>
+                 <input type="date" className={inputClass} value={filters.start_date} onChange={(e) => setFilters({...filters, start_date: e.target.value})} />
+               </div>
+               <div>
+                 <label className={labelClass}>To Date</label>
+                 <input type="date" className={inputClass} value={filters.end_date} onChange={(e) => setFilters({...filters, end_date: e.target.value})} />
+               </div>
+               <div>
+                 <label className={labelClass}>Severity</label>
+                 <select className={inputClass} value={filters.severity_code} onChange={(e) => setFilters({...filters, severity_code: e.target.value})}>
+                   <option value="">All Severities</option>
+                   <option value="ERROR">ERROR</option>
+                   <option value="WARN">WARN</option>
+                   <option value="INFO">INFO</option>
+                 </select>
+               </div>
+               <button 
+                 onClick={clearFilters} 
+                 className="flex items-center justify-center gap-2 h-[38px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-all shadow-sm"
+               >
+                 <RotateCcw size={16} /> Reset Filters
+               </button>
+             </div>
+           </div>
 
       {/* --- LOGS TABLE --- */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

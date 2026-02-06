@@ -1,7 +1,8 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from requests import Session
 
-from app.core.database import Base, engine
+from app.core.database import Base, engine, get_db
 from app.api.routes import (
     user_routes,
     auth_routes,
@@ -14,6 +15,7 @@ from app.api.routes import (
 from app.api.routes.file_upload import router as file_router
 from app.api.routes import dashboard_routes
 from app.core.config import settings
+from app.models.log_entries import Environment
 # -------------------------
 # Create FastAPI app
 # -------------------------
@@ -66,3 +68,7 @@ app.include_router(log_routes.router)
 app.include_router(audit_routes.router)
 app.include_router(file_router)
 app.include_router(dashboard_routes.router)
+
+@app.get("/environments")
+def get_environments(db: Session = Depends(get_db)):
+    return db.query(Environment).all()
