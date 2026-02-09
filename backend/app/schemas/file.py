@@ -3,10 +3,7 @@ from typing import Optional, List
 
 from pydantic import BaseModel, Field
 
-
-# =========================
 # File upload metadata (response)
-# =========================
 class FileUploadResponse(BaseModel):
     file_id: int
     original_name: str
@@ -22,16 +19,13 @@ class FileUploadResponse(BaseModel):
         from_attributes = True
 
 
-# =========================
 # File list item
-# =========================
 class FileListItem(BaseModel):
     file_id: int
     original_name: str
     file_size_bytes: int
     is_archived: bool
     uploaded_at: datetime
-    # Joined fields
     uploader_name: Optional[str] = None
     team_name: Optional[str] = None
     format_name: Optional[str] = None
@@ -43,9 +37,8 @@ class FileListResponse(BaseModel):
     total: int
     items: List[FileListItem]
 
-# =========================
+
 # File filter (query params)
-# =========================
 class FileFilter(BaseModel):
     category: Optional[str] = Field(
         None,

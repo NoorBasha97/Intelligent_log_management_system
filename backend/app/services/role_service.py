@@ -16,9 +16,7 @@ class RoleService:
     Enforces one active role per user.
     """
 
-    # -------------------------
     # Assign role to user
-    # -------------------------
     @staticmethod
     def assign_role_to_user(
         db: Session,
@@ -60,50 +58,8 @@ class RoleService:
         except IntegrityError:
             raise ValueError("Role assignment failed")
 
-    # -------------------------
-    # Get active role for user
-    # -------------------------
-    @staticmethod
-    def get_active_role_for_user(
-        db: Session,
-        *,
-        user_id: int
-    ) -> Role:
 
-        mapping = UserRoleRepository.get_active_role(db, user_id)
-        if not mapping:
-            raise ValueError("User has no active role")
-
-        role = RoleRepository.get_role_by_id(db, mapping.role_id)
-        if not role:
-            raise ValueError("Active role not found")
-
-        return role
-
-    # -------------------------
-    # Get permissions for user
-    # -------------------------
-    @staticmethod
-    def get_permissions_for_user(
-        db: Session,
-        *,
-        user_id: int
-    ) -> List[str]:
-
-        mapping = UserRoleRepository.get_active_role(db, user_id)
-        if not mapping:
-            return []
-
-        permissions = RoleRepository.list_permissions_for_role(
-            db,
-            mapping.role_id
-        )
-
-        return [perm.permission_key for perm in permissions]
-
-    # -------------------------
     # Check permission
-    # -------------------------
     @staticmethod
     def user_has_permission(
         db: Session,
@@ -116,11 +72,8 @@ class RoleService:
         if not user:
             return False
 
-        # 2. ENUM CHECK: If user is ADMIN, they get all permissions
         if user.user_role == "ADMIN":
             return True
 
-        # 3. (Optional) Legacy/User check: 
-        # If they are a 'USER', you can either return False 
-        # or keep the table-based lookup for specific limited actions
+
         return False

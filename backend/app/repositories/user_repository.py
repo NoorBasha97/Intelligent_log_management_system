@@ -15,9 +15,7 @@ class UserRepository:
     This layer MUST NOT contain business logic.
     """
 
-    # -------------------------
     # Create user
-    # -------------------------
     @staticmethod
     def create_user(
         db: Session,
@@ -39,9 +37,8 @@ class UserRepository:
             db.rollback()
             raise
 
-    # -------------------------
+
     # Get user by ID
-    # -------------------------
     @staticmethod
     def get_by_id(
         db: Session,
@@ -53,9 +50,8 @@ class UserRepository:
             .first() 
         )
 
-    # -------------------------
+
     # Get user by email
-    # -------------------------
     @staticmethod
     def get_by_email(
         db: Session,
@@ -80,9 +76,8 @@ class UserRepository:
             .first()
         )
 
-    # -------------------------
+
     # Get user by username
-    # -------------------------
     @staticmethod
     def get_by_username(
         db: Session,
@@ -93,24 +88,6 @@ class UserRepository:
             .filter(User.username == username)
             .first()
         )
-
-    # -------------------------
-    # List users
-    # -------------------------
-    # @staticmethod
-    # def list_users(
-    #     db: Session,
-    #     *,
-    #     limit: int = 50,
-    #     offset: int = 0
-    # ) -> List[User]:
-    #     return (
-    #         db.query(User)
-    #         .order_by(User.created_at.desc())
-    #         .limit(limit)
-    #         .offset(offset)
-    #         .all()
-    #     )
     
     @staticmethod
     def list_users(db: Session, limit: int = 50, offset: int = 0):
@@ -123,9 +100,8 @@ class UserRepository:
             .all()
     )
 
-    # -------------------------
+
     # Update user
-    # -------------------------
     @staticmethod
     def update_user(
         db: Session,
@@ -142,9 +118,7 @@ class UserRepository:
             raise
 
 
-# -------------------------
     # Permanent delete user
-    # -------------------------
     @staticmethod
     def permanent_delete_user(
         db: Session,

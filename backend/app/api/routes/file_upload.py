@@ -6,10 +6,10 @@ from app.models.raw_file import RawFile
 from app.models.file_formats import FileFormat
 from app.schemas.raw_file import RawFileResponse
 from app.services.file_storage import save_file_locally
-from app.services.log_parser.manager import parse_and_store_logs # Updated import
+from app.services.log_parser.manager import parse_and_store_logs
 from app.api.deps import get_active_user, get_current_user
 from app.models.user import User
-from app.models.log_entries import Environment # Ensure correct path
+from app.models.log_entries import Environment
 
 router = APIRouter(prefix="/files", tags=["File Upload"])
 
@@ -27,7 +27,6 @@ def upload_file(
     db: Session = Depends(get_db),
     current_user : User = Depends(get_active_user) # 'user' is an object, not a Session
 ):
-    # SECURITY CHECK: Non-admins can only upload to their OWN team
     if current_user.user_role != "ADMIN":
         from app.models.user_teams import UserTeam
         membership = db.query(UserTeam).filter(
@@ -47,7 +46,7 @@ def upload_file(
     if not fmt:
         raise HTTPException(status_code=400, detail="Invalid format_id")
     
-     # 2. 🔥 Identify Environment Code
+     # 2. Identify Environment Code
     env = db.query(Environment).filter(Environment.environment_id == environment_id).first()
     if not env:
         raise HTTPException(status_code=400, detail="Invalid environment_id")
@@ -65,7 +64,7 @@ def upload_file(
             format_id=format_id
         )
         db.add(raw_file)
-        db.flush() # Get raw_file.file_id without committing transaction yet
+        db.flush()
 
         # 4. Read and Parse
         with open(file_path, "r", encoding="utf-8-sig") as f:
@@ -75,7 +74,7 @@ def upload_file(
             db=db,
             file_id=raw_file.file_id,
             raw_text=raw_text,
-            format_name=fmt.format_name, # Key fix: Pass format name
+            format_name=fmt.format_name,
             environment_code=env.environment_code
         )
         

@@ -55,7 +55,7 @@ class LogRepository:
                    severity_code=None, category_name=None, environment_code=None, 
                    file_id=None, search=None):
         
-        # 🔥 CHANGE: count_logs MUST have the same joins as list_logs or filters will fail
+        # CHANGE: count_logs MUST have the same joins as list_logs or filters will fail
         query = db.query(func.count(LogEntry.log_id)) \
             .join(RawFile, LogEntry.file_id == RawFile.file_id) \
             .outerjoin(LogSeverity, LogEntry.severity_id == LogSeverity.severity_id) \

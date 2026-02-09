@@ -5,7 +5,7 @@ from typing import List, Optional
 class AuditTrailResponse(BaseModel):
     action_id: int
     user_id: Optional[int]
-    username: Optional[str] # Joined from User table
+    username: Optional[str]
     action_type: str
     action_time: datetime
 

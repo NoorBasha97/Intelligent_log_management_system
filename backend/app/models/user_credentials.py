@@ -24,7 +24,7 @@ class UserCredential(Base):
         nullable=False
     )
 
-    password_hash = Column(String(255), nullable=False)  # ✅ ADD THIS
+    password_hash = Column(String(255), nullable=False)  
 
     failed_attempts = Column(Integer, default=0)
 

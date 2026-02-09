@@ -8,7 +8,7 @@ const api = axios.create({
   }
 });
 
-// ✅ REQUEST INTERCEPTOR (already added)
+//  INTERCEPTOR (already added)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -17,7 +17,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// ✅ RESPONSE INTERCEPTOR (ADD THIS)
+//  INTERCEPTOR (ADD THIS)
 api.interceptors.response.use(
   (response) => response,
   (error) => {

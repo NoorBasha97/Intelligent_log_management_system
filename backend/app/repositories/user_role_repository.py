@@ -12,9 +12,7 @@ class UserRoleRepository:
     Handles DB-level operations only.
     """
 
-    # -------------------------
     # Get active role for user
-    # -------------------------
     @staticmethod
     def get_active_role(
         db: Session,
@@ -28,9 +26,7 @@ class UserRoleRepository:
             .first()
         )
 
-    # -------------------------
     # Assign role to user
-    # -------------------------
     @staticmethod
     def assign_role_to_user(
         db: Session,
@@ -50,9 +46,7 @@ class UserRoleRepository:
             db.rollback()
             raise
 
-    # -------------------------
     # Revoke active role
-    # -------------------------
     @staticmethod
     def revoke_active_role(
         db: Session,
@@ -64,9 +58,7 @@ class UserRoleRepository:
         db.add(user_role)
         db.commit()
 
-    # -------------------------
     # Get role mapping by user & role
-    # -------------------------
     @staticmethod
     def get_by_user_and_role(
         db: Session,

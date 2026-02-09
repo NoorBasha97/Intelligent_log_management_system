@@ -1,8 +1,6 @@
 import os
 import shutil
 from fastapi import UploadFile
-
-# BASE_UPLOAD_DIR = "uploads/teams"
 import os
 from pathlib import Path
 
@@ -22,7 +20,7 @@ def save_file_locally(
     file_path = os.path.join(team_dir, upload_file.filename)
     
     
-    # ✅ Add this line to ensure we start from the beginning
+    # Add this line to ensure we start from the beginning
     upload_file.file.seek(0)
     
     with open(file_path, "wb") as buffer:

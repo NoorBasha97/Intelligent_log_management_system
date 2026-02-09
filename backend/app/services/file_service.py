@@ -16,9 +16,7 @@ class FileService:
     Handles team ownership, validation, and metadata creation.
     """
 
-    # -------------------------
     # Detect file format
-    # -------------------------
     @staticmethod
     def detect_format(filename: str) -> Optional[str]:
         ext = Path(filename).suffix.lower()
@@ -32,9 +30,7 @@ class FileService:
 
         return None
 
-    # -------------------------
     # Upload file (metadata only)
-    # -------------------------
     @staticmethod
     def upload_file(
         db: Session,

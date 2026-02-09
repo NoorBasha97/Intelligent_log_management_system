@@ -14,9 +14,8 @@ class AuditService:
     Audit data is READ-ONLY.
     """
 
-    # -------------------------
+
     # List audit events
-    # -------------------------
     @staticmethod
     def list_audit_events(
         db: Session,

@@ -18,9 +18,7 @@ class LogService:
     Handles validation, permissions, and deduplication strategy.
     """
 
-    # -------------------------
     # Add single log entry
-    # -------------------------
     @staticmethod
     def add_log_entry(
         db: Session,
@@ -79,9 +77,8 @@ class LogService:
             db.rollback()
             raise ValueError("Failed to insert log entry")
 
-    # -------------------------
+    
     # Bulk insert logs
-    # -------------------------
     @staticmethod
     def bulk_add_logs(
         db: Session,
@@ -141,9 +138,8 @@ class LogService:
             db.rollback()
             raise ValueError("Bulk log insertion failed")
 
-    # -------------------------
+
     # Query logs
-    # -------------------------
     @staticmethod
     def query_logs(
         db: Session,

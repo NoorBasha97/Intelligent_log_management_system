@@ -15,9 +15,7 @@ from app.models.log_entries import LogEntry, LogSeverity, LogCategory, Environme
 
 
 class FileRepository:
-     # -------------------------
     # Create raw file record
-    # -------------------------
     @staticmethod
     def create_file(
         db: Session,
@@ -33,9 +31,7 @@ class FileRepository:
             db.rollback()
             raise
 
-    # -------------------------
     # Get file by ID
-    # -------------------------
     @staticmethod
     def get_by_id(
         db: Session,
@@ -98,14 +94,13 @@ class FileRepository:
             items.append(f)
             
         return items
-    # -------------------------
+    
     # Count files (for pagination)
-    # -------------------------
     @staticmethod
     def count_files(
         db: Session,
         *,
-        team_id: Optional[int] = None, # Made Optional
+        team_id: Optional[int] = None, 
         category_id: Optional[int] = None,
         format_id: Optional[int] = None,
         is_archived: Optional[bool] = None,

@@ -16,10 +16,7 @@ router = APIRouter(
     tags=["Roles & Permissions"]
 )
 
-
-# -------------------------
 # Assign role to user (ADMIN)
-# -------------------------
 @router.post(
     "/assign",
     response_model=RoleAssignmentResponse
@@ -53,9 +50,7 @@ def assign_role_to_user(
         )
 
 
-# -------------------------
 # Get permissions for current user
-# -------------------------
 @router.get(
     "/me/permissions",
     response_model=UserPermissionsResponse

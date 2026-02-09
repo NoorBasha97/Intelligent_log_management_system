@@ -18,9 +18,9 @@ LOG_PATTERN = re.compile(
 
 def parse_text(text: str):
     results = []
-    for line in text.splitlines():
+    for line in text.splitlines(): # it will break the raw_text to single line text
         line = line.strip()
-        if not line:
+        if not line:  # it will skip the empty lines
             continue
         
         match = LOG_PATTERN.search(line) 
@@ -30,7 +30,6 @@ def parse_text(text: str):
                 results.append({
                     "timestamp": datetime.strptime(data["timestamp"], "%Y-%m-%d %H:%M:%S"),
                     "severity": data["severity"].upper(),
-                    # 🔥 FIX: Use .get() to avoid KeyError if service isn't found
                     "service": data.get("service") if data.get("service") else "SYSTEM",
                     "message": data["message"].strip()
                 })
@@ -41,8 +40,9 @@ def parse_text(text: str):
 
 
 def parse_json(text: str):
-    data = json.loads(text)
-    items = data if isinstance(data, list) else [data]
+    data = json.loads(text)  # converts json text into python list / dict
+    items = data if isinstance(data, list) else [data] # checking it is list or not if not make it list
+    
     return [{
         "timestamp": datetime.strptime(i["timestamp"], "%Y-%m-%d %H:%M:%S"),
         "severity": i["severity"].upper(),
@@ -51,8 +51,8 @@ def parse_json(text: str):
     } for i in items]
 
 def parse_csv(text: str):
-    f = io.StringIO(text)
-    reader = csv.DictReader(f)
+    f = io.StringIO(text) # it treates the text as real file in memory
+    reader = csv.DictReader(f) # read rows using the first line as headers(keys)
     return [{
         "timestamp": datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S"),
         "severity": row["severity"].upper(),
@@ -61,9 +61,9 @@ def parse_csv(text: str):
     } for row in reader]
 
 def parse_xml(text: str):
-    root = ET.fromstring(text)
+    root = ET.fromstring(text) # parse the text into XML tree structure
     results = []
-    for log in root.findall('log'):
+    for log in root.findall('log'): # for log tag in that tree
         results.append({
             "timestamp": datetime.strptime(log.find('timestamp').text, "%Y-%m-%d %H:%M:%S"),
             "severity": log.find('severity').text.upper(),

@@ -2,10 +2,7 @@ from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
-
-# =========================
 # Base schema (shared fields)
-# =========================
 class UserBase(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
@@ -19,16 +16,12 @@ class UserBase(BaseModel):
     user_role : Optional[str] = None
 
 
-# =========================
 # Request schema (CREATE)
-# =========================
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6, description="Plain password")
 
 
-# =========================
 # Request schema (UPDATE) 
-# =========================
 class UserUpdate(BaseModel):
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, max_length=100)
@@ -42,9 +35,7 @@ class UserUpdate(BaseModel):
     is_deleted: Optional[bool] = None
 
 
-# =========================
-# Response schema (PUBLIC)
-# =========================
+# Response schema (PUBLIC)  
 class UserResponse(BaseModel):
     user_id: int
     first_name: str

@@ -20,7 +20,7 @@ class UserLoginHistory(Base):
     user_id = Column(
         BigInteger,
         ForeignKey("users.user_id", ondelete="CASCADE"),
-        unique=False, # 🔥 CHANGE THIS TO False (or remove it)
+        unique=False, 
         nullable=False
     )
 

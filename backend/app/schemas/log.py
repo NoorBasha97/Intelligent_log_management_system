@@ -4,9 +4,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
-# =========================
 # Create single log entry
-# =========================
 class LogCreate(BaseModel):
     file_id: int = Field(..., gt=0)
     log_timestamp: datetime
@@ -17,9 +15,7 @@ class LogCreate(BaseModel):
     environment_id: Optional[int] = None
 
 
-# =========================
 # Bulk log entry
-# =========================
 class LogBulkItem(BaseModel):
     log_timestamp: datetime
     message_line: str = Field(..., min_length=1)
@@ -34,9 +30,7 @@ class LogBulkCreate(BaseModel):
     logs: List[LogBulkItem]
 
 
-# =========================
 # Log query parameters
-# =========================
 class LogQueryParams(BaseModel):
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None

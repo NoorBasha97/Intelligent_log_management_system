@@ -17,9 +17,7 @@ router = APIRouter(
 )
 
 
-# -------------------------
 # Create team (ADMIN)
-# -------------------------
 @router.post(
     "",
     response_model=TeamResponse,
@@ -43,9 +41,7 @@ def create_team(
         )
 
 
-# -------------------------
 # List teams (ADMIN)
-# -------------------------
 @router.get(
     "",
     response_model=list[TeamResponse]
@@ -63,9 +59,7 @@ def list_teams(
     )
 
 
-# -------------------------
 # Assign user to team (ADMIN)
-# -------------------------
 @router.post(
     "/assign",
     response_model=TeamAssignmentResponse
@@ -100,9 +94,7 @@ def assign_user_to_team(
         )
 
 
-# -------------------------
 # Get current user's active team
-# -------------------------
 @router.get(
     "/me",
     response_model=TeamResponse
@@ -124,7 +116,7 @@ def get_my_team(
         )
 
 
-# backend/app/api/routes/team_routes.py
+
 
 @router.get("/my-team-id")
 def get_my_team_id(
@@ -147,8 +139,6 @@ def get_my_team_id(
     return {"team_id": membership.team_id}
 
 
-
-# backend/app/api/routes/team_routes.py
 
 @router.get("/my-joined-teams", response_model=list[TeamResponse])
 def get_my_joined_teams(

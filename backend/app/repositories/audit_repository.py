@@ -14,9 +14,7 @@ class AuditRepository:
     Audit records are DB-generated and immutable.
     """
 
-    # -------------------------
     # List audit events
-    # -------------------------
     @staticmethod
     def list_audit_events(
         db: Session,
@@ -54,9 +52,7 @@ class AuditRepository:
             .all()
         )
 
-    # -------------------------
     # Count audit events
-    # -------------------------
     @staticmethod
     def count_audit_events(
         db: Session,

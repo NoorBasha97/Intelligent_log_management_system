@@ -14,7 +14,7 @@ from app.repositories.file_repository import FileRepository
 from app.services.team_service import TeamService
 from typing import Optional
 from datetime import datetime
-from app.models.archives import Archive # Import your Archive model
+from app.models.archives import Archive 
 
 from app.models.raw_file import RawFile
 from app.models.log_entries import LogEntry
@@ -25,9 +25,7 @@ router = APIRouter(
 )
 
 
-# -------------------------
 # Upload file metadata
-# -------------------------
 @router.post(
     "",
     response_model=FileUploadResponse,
@@ -59,9 +57,7 @@ def upload_file(
         )
 
 
-# -------------------------
 # List files (team-scoped)
-# -------------------------
 @router.get("/get-all-files", response_model=FileListResponse)
 def get_all_files(
     db: Session = Depends(get_db),
@@ -128,7 +124,7 @@ def delete_file_permanently(
         return None
     except Exception as e:
         db.rollback()
-        print(f"Error during delete: {e}") # Print the error to your terminal
+        print(f"Error during delete: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     
 @router.patch("/{file_id}/archive", status_code=status.HTTP_200_OK)
@@ -194,9 +190,6 @@ def get_user_files(
         except ValueError:
             return {"total": 0, "items": []}
 
-    # Reusing the FileRepository.list_files logic
-    # Note: Ensure your repository supports passing both team_id and user_id if needed, 
-    # or just filter here directly.
     query = db.query(RawFile)
     
     if target_user_id:

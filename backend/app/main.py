@@ -16,9 +16,7 @@ from app.api.routes.file_upload import router as file_router
 from app.api.routes import dashboard_routes
 from app.core.config import settings
 from app.models.log_entries import Environment
-# -------------------------
 # Create FastAPI app
-# -------------------------
 app = FastAPI(
     title="Intelligent File & Log Management System",
     description="Secure, multi-tenant log ingestion and analysis backend",

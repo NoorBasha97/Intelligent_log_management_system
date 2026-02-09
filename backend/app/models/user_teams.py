@@ -39,3 +39,6 @@ class UserTeam(Base):
     # left_at = Column(
     #     TIMESTAMP(timezone=True)
     # )
+    
+    is_active = Column(Boolean, default=True, nullable=False)
+    left_at = Column(TIMESTAMP(timezone=True), nullable=True)

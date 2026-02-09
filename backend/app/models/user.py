@@ -55,7 +55,6 @@ class User(Base):
         onupdate=func.now()
     )
 
-     # ✅ ADD THIS
     credentials = relationship( 
         "UserCredential",
         back_populates="user",

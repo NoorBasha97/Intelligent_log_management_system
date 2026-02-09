@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.models.roles import Role
 from app.models.permissions import Permission
-from app.models.role_permissions import RolePermission
+# from app.models.role_permissions import RolePermission
 
 
 class RoleRepository:
@@ -15,9 +15,7 @@ class RoleRepository:
     - role-permission mappings
     """
 
-    # -------------------------
     # Roles
-    # -------------------------
     @staticmethod
     def get_role_by_id(
         db: Session,
@@ -50,9 +48,8 @@ class RoleRepository:
             .all()
         )
 
-    # -------------------------
+
     # Permissions
-    # -------------------------
     @staticmethod
     def get_permission_by_key(
         db: Session,
@@ -74,41 +71,3 @@ class RoleRepository:
             .all()
         )
 
-    # -------------------------
-    # Role → Permissions
-    # -------------------------
-    @staticmethod
-    def list_permissions_for_role(
-        db: Session,
-        role_id: int
-    ) -> List[Permission]:
-        return (
-            db.query(Permission)
-            .join(
-                RolePermission,
-                RolePermission.permission_id == Permission.permission_id
-            )
-            .filter(RolePermission.role_id == role_id)
-            .order_by(Permission.permission_key.asc())
-            .all()
-        )
-
-    @staticmethod
-    def role_has_permission(
-        db: Session,
-        role_id: int,
-        permission_key: str
-    ) -> bool:
-        return (
-            db.query(RolePermission)
-            .join(
-                Permission,
-                Permission.permission_id == RolePermission.permission_id
-            )
-            .filter(
-                RolePermission.role_id == role_id,
-                Permission.permission_key == permission_key
-            )
-            .first()
-            is not None
-        )

@@ -17,6 +17,7 @@ from app.models.log_entries import LogEntry
 from app.models.login_history import UserLoginHistory
 from app.models.raw_file import RawFile
 from app.models.user_credentials import UserCredential
+from app.services.team_service import TeamService
 
 
 router = APIRouter(
@@ -25,9 +26,7 @@ router = APIRouter(
 )
 
 
-# -------------------------
 # Create user (public)
-# -------------------------
 @router.post(
     "/register", 
     response_model=UserResponse,
@@ -48,9 +47,8 @@ def create_user(
         )
 
 
-# -------------------------
+
 # Get current user
-# -------------------------
 @router.get(
     "/me",
     response_model=UserResponse
@@ -61,9 +59,8 @@ def get_me(
     return current_user
 
 
-# -------------------------
+
 # List users (ADMIN)
-# -------------------------
 @router.get(
     "/all",
     response_model=List[UserResponse]
@@ -82,9 +79,7 @@ def list_users(
     return users
 
 
-# -------------------------
 # Update user (self)
-# -------------------------
 @router.put("/me", response_model=UserResponse)
 def update_my_profile(
     payload: UserUpdate,
@@ -105,35 +100,54 @@ def update_my_profile(
             detail=str(exc)
         )
 
-# --- UPDATE USER (ADMIN) -------
+# ----- UPDATE USER (ADMIN) 
 
 @router.put(
     "/update/{user_id}",
     response_model=UserResponse
 )
+@router.put("/update/{user_id}", response_model=UserResponse)
 def update_user_by_admin(
-    user_id : int,
+    user_id: int,
     payload: UserUpdate,
     db: Session = Depends(get_db)
 ):
+    # 1. Fetch the actual User object
+    db_user = db.query(User).filter(User.user_id == user_id).first()
+    
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
     try:
-        current_user=db.query(User).filter(User.user_id==user_id).first()
-        updated = UserService.update_user(
+        # 2. Set the audit ID for the trigger
+        # (Assuming current_user is available via dependency, or skip if not needed)
+        # db.execute(text(f"SET app.current_user_id = '...'"))
+
+        # 3. TEAM LOGIC FIX:
+        # If the admin provided a team_id in the update form
+        if payload.team_id is not None:
+            # This service method handles deactivating the old team 
+            # and inserting/updating the new one safely.
+            TeamService.assign_user_to_team(db, user_id=user_id, team_id=payload.team_id)
+
+        # 4. Update general user details (name, phone, etc.)
+        updated_user = UserService.update_user(
             db,
-            current_user,
+            db_user,
             payload
         )
         
-        update_team = UserTeam(user_id=current_user.user_id,team_id=payload.team_id)
-        db.add(update_team)
-        db.commit()
-        return updated
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc)
-        )
+        return updated_user
 
+    except ValueError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as e:
+        db.rollback()
+        print(f"Update Error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+    
 # -------------------------
 # Delete user (ADMIN)
 # -------------------------

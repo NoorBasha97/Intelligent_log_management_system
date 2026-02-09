@@ -21,9 +21,7 @@ class UserService:
     Handles validation, transactions, and orchestration.
     """
 
-    # -------------------------
     # Password helpers
-    # -------------------------
     @staticmethod
     def hash_password(password: str) -> str:
         return pwd_context.hash(password)
@@ -35,9 +33,7 @@ class UserService:
     ) -> bool:
         return pwd_context.verify(plain_password, hashed_password)
 
-    # -------------------------
     # Create user (SIGNUP)
-    # -------------------------
     @staticmethod
     def create_user(
         db: Session,
@@ -65,14 +61,14 @@ class UserService:
             phone_no=user_data.phone_no,
             email=user_data.email,
             username=user_data.username,
-            gender=user_data.gender,  # must match DB constraint
+            gender=user_data.gender, 
             user_role = user_data.user_role
         )
 
         # 3. Insert USER first (this is where gender constraint is checked)
         try:
             db.add(user)
-            db.flush()  # user_id generated ONLY if insert succeeds
+            db.flush() 
         except IntegrityError as exc:
             db.rollback()
             raise ValueError(f"User creation failed: {exc}")
@@ -94,9 +90,7 @@ class UserService:
             db.rollback()
             raise ValueError(f"Credential creation failed: {exc}")
 
-    # -------------------------
     # Get user by ID
-    # -------------------------
     @staticmethod
     def get_user_by_id(
         db: Session,
@@ -104,9 +98,8 @@ class UserService:
     ) -> Optional[User]:
         return UserRepository.get_by_id(db, user_id)
 
-    # -------------------------
+    
     # List users (ADMIN)
-    # -------------------------
     @staticmethod
     def list_users(
         db: Session,
@@ -120,9 +113,8 @@ class UserService:
             offset=offset
         )
 
-    # -------------------------
+    
     # Update user (SELF)
-    # -------------------------
     @staticmethod
     def update_user(
         db: Session,
@@ -157,6 +149,6 @@ class UserService:
     def delete_user(db: Session, user: User) -> None:
     # Instead of db.delete(user)
         user.is_deleted = True
-        user.is_active = False # Deactivate their login
+        user.is_active = False 
         db.commit()
     # Now the user is still in the DB, but cannot log in.
