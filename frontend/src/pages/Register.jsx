@@ -31,7 +31,7 @@ function Register() {
     try {
       await api.post("/users/register", formData);
       setStatus({ type: "success", message: "Registration successful! You can now login." });
-      // Optional: Clear form
+      //to clear form after submit
       setFormData({
         first_name: "", last_name: "", phone_no: "",
         email: "", username: "", gender: "", password: ""

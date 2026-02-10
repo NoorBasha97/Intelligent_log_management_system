@@ -15,16 +15,11 @@ from app.services.role_service import RoleService
 from app.core.config import settings
 
 
-
-# -------------------------
 # JWT Security scheme
-# -------------------------
 security = HTTPBearer()
 
 
-# -------------------------
 # Get current user (JWT-based)
-# -------------------------
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
@@ -69,9 +64,7 @@ def get_current_user(
     return user
 
 
-# -------------------------
 # Active & authenticated user
-# -------------------------
 def get_active_user(
     current_user: User = Depends(get_current_user)
 ) -> User:
@@ -86,13 +79,11 @@ def get_db_with_user(
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
-    # 🔥 THIS LINE FIXES THE NULL USER ID
-    # It tells Postgres: "For this connection, the user is X"
     db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
     return db
-# -------------------------
+
+
 # Permission guard
-# -------------------------
 def require_permission(permission_key: str):
 
     def _permission_guard(

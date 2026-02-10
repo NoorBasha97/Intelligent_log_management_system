@@ -127,44 +127,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- ABOUT SECTION --- */}
-      {/* <section id="about" className="py-24">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-          <div className="space-y-6">
-            <h2 className="text-4xl font-black text-slate-900 tracking-tight leading-tight">Built for Developers, <br /> Trusted by Admins.</h2>
-            <p className="text-slate-500 leading-relaxed text-lg font-medium">
-              Troubleshoot production bugs or audit security events effortlessly.
-            </p>
-            <ul className="space-y-4">
-              {['End-to-end JWT security', 'Team isolation by design', 'SQL-powered search'].map((item, idx) => (
-                <li key={idx} className="flex items-center gap-3 font-bold text-slate-700">
-                  <CheckCircle className="text-green-500" size={20} /> {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-indigo-600 rounded-[3rem] aspect-square flex items-center justify-center relative overflow-hidden shadow-2xl">
-             <Terminal size={200} className="text-indigo-400 opacity-20 absolute" />
-             <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 z-10 w-4/5">
-                <p className="font-mono text-indigo-100 text-sm">
-                  $ logmaster analyze --team backend-service <br />
-                  <span className="text-green-400">Processing logs...</span> <br />
-                  <span className="text-indigo-200">142 Log entries ingested.</span>
-                </p>
-             </div>
-          </div>
-        </div>
-      </section> */}
 
-      {/* --- CONTACT SECTION --- */}
-      {/* <section id="contact" className="py-24 bg-slate-900 text-white relative">
-        <div className="max-w-7xl mx-auto px-6 text-center space-y-8 relative z-10">
-          <h2 className="text-4xl font-black tracking-tight">Ready to Secure Your Logs?</h2>
-          <button className="bg-white text-slate-900 px-8 py-3 rounded-xl font-black hover:bg-slate-100 transition-all flex items-center gap-2 mx-auto">
-            <Mail size={18} /> Contact Support
-          </button>
-        </div>
-      </section> */}
 
       {/* --- ENHANCED ENTERPRISE FOOTER --- */}
       <footer className="bg-slate-50 border-t border-slate-200 pt-16 pb-8">
@@ -183,10 +146,7 @@ export default function LandingPage() {
                 Advanced log orchestration and security auditing for distributed systems. 
                 Built for teams that value visibility and data integrity.
               </p>
-              {/* <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-100 rounded-full">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">All Systems Operational</span>
-              </div> */}
+            
             </div>
 
             {/* Column 2: Platform */}

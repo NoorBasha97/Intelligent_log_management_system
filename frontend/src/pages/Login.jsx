@@ -80,7 +80,7 @@ function Login() {
               <input
                 name="email"
                 type="email"
-                placeholder="name@gmail.com"
+                placeholder="example@gmail.com"
                 className={inputClass}
                 onChange={handleChange}
                 required

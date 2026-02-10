@@ -12,7 +12,7 @@ def create_access_token(data: dict) -> str:
     payload = data.copy()
     payload.update({"exp": expire})
     encoded_jwt = jwt.encode(payload,settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-    return encoded_jwt   # ✅ ONLY STRING
+    return encoded_jwt   #  ONLY STRING
 
 
 from pydantic_settings import BaseSettings
