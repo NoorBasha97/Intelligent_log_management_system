@@ -169,7 +169,7 @@ def manual_archive_file(
 def get_user_files(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_active_user),
-    scope: str = Query("me", regex="^(me|team)$"),
+    scope: str = Query("me", pattern="^(me|team)$"),
     limit: int = 50,
     offset: int = 0
 ):

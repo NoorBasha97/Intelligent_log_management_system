@@ -21,7 +21,7 @@ class LogRepository:
          .outerjoin(LogSeverity, LogEntry.severity_id == LogSeverity.severity_id) \
          .outerjoin(LogCategory, LogEntry.category_id == LogCategory.category_id) \
          .outerjoin(Environment, LogEntry.environment_id == Environment.environment_id) \
-         .outerjoin(Team, RawFile.team_id == Team.team_id) # Ensure team is joined
+         .outerjoin(Team, RawFile.team_id == Team.team_id) # ensure team is joined
 
         query = LogRepository._apply_filters(
             query=query,

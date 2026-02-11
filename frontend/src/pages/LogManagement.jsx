@@ -3,7 +3,7 @@ import api from '../api/axios';
 import {
   Trash2, Search, Calendar, Filter,
   Loader2, RotateCcw, Terminal, SlidersHorizontal,
-  ChevronLeft, ChevronRight // Added for pagination
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 export default function LogManagement() {
@@ -15,14 +15,12 @@ export default function LogManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const logsPerPage = 8;
 
-  // 🔥 Fixed keys to match Backend expectations
+  //  Fixed keys to match Backend expectations
   const initialFilters = {
     search: '',
     start_date: '',
     end_date: '',
     severity_code: '',
-    environment_code: '',
-    category_name: '',
     team_id: ''
   };
 
@@ -118,6 +116,7 @@ export default function LogManagement() {
                    <option value="ERROR">ERROR</option>
                    <option value="WARN">WARN</option>
                    <option value="INFO">INFO</option>
+                   <option value="FATAL">FATAL</option>
                  </select>
                </div>
                <button 
@@ -169,7 +168,6 @@ export default function LogManagement() {
         </div>
 
         {/* Pagination Controls */}
-        {/* --- UPDATED PAGINATION FOOTER (Login Audit Style) --- */}
         {!loading && logs.length > logsPerPage && (
           <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
             {/* Left side: Range Info */}

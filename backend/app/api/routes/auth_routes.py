@@ -15,9 +15,7 @@ router = APIRouter(
 )
 
 
-# -------------------------
 # Login
-# -------------------------
 @router.post(
     "/login" ,
     response_model=Token  
@@ -32,7 +30,7 @@ def login(
     try:
          # 1. Verify User
         user = AuthService.authenticate(db, payload.email, payload.password)
-        print(user)
+
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
@@ -61,8 +59,6 @@ def get_my_login_history(
     
     return {"total": total, "items": items}
 
-
-# backend/app/api/routes/auth_routes.py
 
 @router.get("/login-history/all", response_model=LoginHistoryList)
 def get_all_login_history(

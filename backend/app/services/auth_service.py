@@ -90,11 +90,11 @@ class AuthService:
     def _handle_failed_attempt(db: Session, credentials: UserCredential) -> None:
         """Updates failure counter and locks account if threshold reached."""
         credentials.failed_attempts += 1
-        credentials.last_failed_at = datetime.utcnow()
+        credentials.last_failed_at = datetime.now(timezone.utc)
 
         if credentials.failed_attempts >= MAX_FAILED_ATTEMPTS:
             credentials.is_locked = True
-            credentials.locked_until = datetime.utcnow() + timedelta(minutes=LOCK_DURATION_MINUTES)
+            credentials.locked_until = datetime.now(timezone.utc) + timedelta(minutes=LOCK_DURATION_MINUTES)
         
         # Save the counter update
         db.commit()
