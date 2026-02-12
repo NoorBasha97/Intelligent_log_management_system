@@ -1,22 +1,25 @@
 from datetime import datetime
 from typing import Optional, List
-
 from pydantic import BaseModel, Field
+
 
 # File upload metadata (response)
 class FileUploadResponse(BaseModel):
     file_id: int
     original_name: str
     file_size_bytes: int
-
-    format: Optional[str]
-    category: Optional[str]
+    uploaded_by: Optional[int] = None #  Added for ownership tracking
+    
+    # Defaults to None to prevent Response Validation Errors
+    format: Optional[str] = None
+    category: Optional[str] = None
 
     uploaded_at: datetime
     is_archived: bool
 
     class Config:
         from_attributes = True
+
 
 
 # File list item
@@ -26,6 +29,12 @@ class FileListItem(BaseModel):
     file_size_bytes: int
     is_archived: bool
     uploaded_at: datetime
+    
+    #CRITICAL: Added this so the frontend can check: 
+    # if (file.uploaded_by === currentUserId)
+    uploaded_by: Optional[int] = None 
+    
+    # Joined fields from Team, User, and Format tables
     uploader_name: Optional[str] = None
     team_name: Optional[str] = None
     format_name: Optional[str] = None

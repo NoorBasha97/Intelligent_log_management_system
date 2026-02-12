@@ -24,7 +24,7 @@ export default function Sidebar() {
     { path: '/admin/files', icon: FileStack, label: 'Files' },
     { path: '/admin/logs', icon: Terminal, label: 'Logs' },
     { path: '/admin/login-audits', icon: ShieldCheck, label: 'Login Audits' },
-    { path: '/admin/audit', icon: HistoryIcon, label: 'Audit Trails' }, // 🔥 Use the renamed icon
+    { path: '/admin/audit', icon: HistoryIcon, label: 'Audit Trails' }, //  Use the renamed icon
   ];
 
   return (

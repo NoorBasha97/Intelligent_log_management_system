@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-
+from sqlalchemy import text, desc, func
 from app.api.deps import get_db, get_active_user, require_permission
 from app.models.user import User
 from app.schemas.file import (
@@ -12,25 +12,23 @@ from app.schemas.file import (
 from app.services.file_service import FileService
 from app.repositories.file_repository import FileRepository
 from app.services.team_service import TeamService
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
-from app.models.archives import Archive 
 
+# Models
+from app.models.archives import Archive 
 from app.models.raw_file import RawFile
 from app.models.log_entries import LogEntry
+from app.models.teams import Team
+from app.models.file_formats import FileFormat
 
 router = APIRouter(
     prefix="/files",
     tags=["Files"]
 )
 
-
-# Upload file metadata
-@router.post(
-    "",
-    response_model=FileUploadResponse,
-    status_code=status.HTTP_201_CREATED
-)
+# 1. Upload file metadata
+@router.post("", response_model=FileUploadResponse, status_code=status.HTTP_201_CREATED)
 def upload_file(
     filename: str,
     file_size_bytes: int,
@@ -38,9 +36,8 @@ def upload_file(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("UPLOAD_LOG"))
 ):
-    """
-    Upload file metadata (actual file upload handled elsewhere).
-    """
+    # Set audit session user
+    db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
     try:
         file = FileService.upload_file(
             db,
@@ -51,13 +48,9 @@ def upload_file(
         )
         return file
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc)
-        )
+        raise HTTPException(status_code=400, detail=str(exc))
 
-
-# List files (team-scoped)
+# 2. List all files (Admin View)
 @router.get("/get-all-files", response_model=FileListResponse)
 def get_all_files(
     db: Session = Depends(get_db),
@@ -71,100 +64,77 @@ def get_all_files(
     limit: int = 50,
     offset: int = 0
 ):
-    # Security: If not Admin, they can ONLY see their own team's files
-    target_team_id = team_id if current_user.user_role == "ADMIN" else None
-    
     if current_user.user_role != "ADMIN":
-        from app.services.team_service import TeamService
+        # Force regular users to their own team if they try to access this admin route
         try:
             team = TeamService.get_active_team_for_user(db, user_id=current_user.user_id)
-            target_team_id = team.team_id
+            team_id = team.team_id
         except:
             return {"total": 0, "items": []}
 
+    # Use repository which handles the complex joins (User, Team, Format)
     items = FileRepository.list_files(
-        db, team_id=target_team_id, search=search, severity=severity,
+        db, team_id=team_id, search=search, severity=severity,
         environment=environment, category=category, start_date=start_date,
         limit=limit, offset=offset
     )
     
-    total = FileRepository.count_files(db, team_id=target_team_id)
+    total = FileRepository.count_files(db, team_id=team_id)
     return {"total": total, "items": items}
 
-# --- DELETE FILE ROUTE ---
-
+# 3. Secure Delete Route
 @router.delete("/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_file_permanently(
     file_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_active_user)
 ):
-    # 1. Fetch the file
     file = db.query(RawFile).filter(RawFile.file_id == file_id).first()
-   
-    
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    # 2. Permission Check: Only ADMIN or the person who uploaded it can delete
+    # 🔥 OWNERSHIP CHECK: Admin can delete all, User only their own
     if current_user.user_role != "ADMIN" and file.uploaded_by != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this file")
 
     try:
-        # 3. Permanent delete
-        # NOTE: If your log_entries table has a ForeignKey with ON DELETE CASCADE, 
-        # deleting this file will automatically delete all its logs.
-        # 1. Delete children using synchronize_session=False for speed and reliability
+        db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
+        
+        # Cleanup children to avoid ForeignKey errors
         db.query(LogEntry).filter(LogEntry.file_id == file_id).delete(synchronize_session=False)
         db.query(Archive).filter(Archive.file_id == file_id).delete(synchronize_session=False)
-        
         db.flush() 
+
         db.delete(file)
         db.commit()
         return None
     except Exception as e:
         db.rollback()
-        print(f"Error during delete: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    
+
+# 4. Manual Archive
 @router.patch("/{file_id}/archive", status_code=status.HTTP_200_OK)
 def manual_archive_file(
     file_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_permission("ARCHIVE_LOG"))
 ):
-    # 1. Fetch file
     file = db.query(RawFile).filter(RawFile.file_id == file_id).first()
-    
-    if not file:
-        raise HTTPException(status_code=404, detail="File not found")
-    
-    if file.is_archived:
-        raise HTTPException(status_code=400, detail="File is already archived")
+    if not file or file.is_archived:
+        raise HTTPException(status_code=400, detail="File not found or already archived")
 
     try:
-        # 2. Set archived status
+        db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
         file.is_archived = True
-        
-        # 3. Create entry in archives table (Optional, but keeps history consistent)
-        # We count existing logs for this file
-        from app.models.log_entries import LogEntry
         log_count = db.query(LogEntry).filter(LogEntry.file_id == file_id).count()
-        
-        new_archive = Archive(
-            file_id=file_id,
-            total_records=log_count
-        )
-        db.add(new_archive)
-        
+        db.add(Archive(file_id=file_id, total_records=log_count))
         db.commit()
-        return {"message": "File manually archived successfully"}
+        return {"message": "File manually archived"}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-    
 
-
+# 5. List My Files (User Dashboard View)
 @router.get("/me", response_model=FileListResponse)
 def get_user_files(
     db: Session = Depends(get_db),
@@ -174,30 +144,37 @@ def get_user_files(
     offset: int = 0
 ):
     from app.services.team_service import TeamService
-    from app.repositories.file_repository import FileRepository
 
-    target_user_id = None
-    target_team_id = None
+    # 1. Identify the user's team
+    try:
+        team = TeamService.get_active_team_for_user(db, user_id=current_user.user_id)
+        target_team_id = team.team_id
+    except ValueError:
+        return {"total": 0, "items": []}
 
+    # 2. Build the query with joins to get names
+    query = db.query(
+        RawFile,
+        User.username.label("uploader_name")
+    ).outerjoin(User, RawFile.uploaded_by == User.user_id)
+
+    # 3. APPLY THE EXCLUSION LOGIC
     if scope == "me":
-        # Only files I uploaded
-        target_user_id = current_user.user_id
+        # ONLY my files
+        query = query.filter(RawFile.uploaded_by == current_user.user_id)
     else:
-        # Files from my entire team
-        try:
-            team = TeamService.get_active_team_for_user(db, user_id=current_user.user_id)
-            target_team_id = team.team_id
-        except ValueError:
-            return {"total": 0, "items": []}
-
-    query = db.query(RawFile)
-    
-    if target_user_id:
-        query = query.filter(RawFile.uploaded_by == target_user_id)
-    else:
+        # Team files AND EXCLUDE the current user (my files)
         query = query.filter(RawFile.team_id == target_team_id)
+        query = query.filter(RawFile.uploaded_by != current_user.user_id) #  Exclude self
 
+    # 4. Pagination and Execution
     total = query.count()
-    items = query.order_by(RawFile.uploaded_at.desc()).offset(offset).limit(limit).all()
+    raw_results = query.order_by(RawFile.uploaded_at.desc()).offset(offset).limit(limit).all()
+
+    items = []
+    for row in raw_results:
+        f = row[0]
+        f.uploader_name = row.uploader_name
+        items.append(f)
 
     return {"total": total, "items": items}

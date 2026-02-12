@@ -138,8 +138,6 @@ def get_my_team_id(
 
     return {"team_id": membership.team_id}
 
-
-
 @router.get("/my-joined-teams", response_model=list[TeamResponse])
 def get_my_joined_teams(
     db: Session = Depends(get_db), 
@@ -148,15 +146,13 @@ def get_my_joined_teams(
     from app.models.user_teams import UserTeam
     from app.models.teams import Team
 
-    # If Admin, they can upload to any team
-    # if current_user.user_role == "ADMIN":
-    #     return db.query(Team).all()
-
-    # If regular user, join user_teams and teams table
+    # Query
     joined_teams = db.query(Team).join(
         UserTeam, UserTeam.team_id == Team.team_id
     ).filter(
-        UserTeam.user_id == current_user.user_id
+        UserTeam.user_id == current_user.user_id,
+        UserTeam.is_active == True
     ).all()
 
+    print(f"DEBUG: User {current_user.user_id} belongs to teams: {joined_teams}")
     return joined_teams

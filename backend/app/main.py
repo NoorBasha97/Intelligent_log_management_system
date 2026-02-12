@@ -23,7 +23,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# ✅ CORS configuration (ADD THIS)
+#CORS configuration (ADD THIS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -46,17 +46,14 @@ app.add_middleware(
 #     Base.metadata.create_all(bind=engine)
 
 
-# -------------------------
 # Health check
-# -------------------------
 @app.get("/health", tags=["System"])
 def health_check():
     return {"status": "OK"}
 
 
-# -------------------------
+
 # Include API routes
-# -------------------------
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)
 app.include_router(team_routes.router)

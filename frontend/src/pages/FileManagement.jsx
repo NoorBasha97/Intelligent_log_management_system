@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import {
   Upload, FileText, Trash2, Search, Calendar,
   Filter, Loader2, RotateCcw, Users as TeamIcon,
-  Archive as ArchiveIcon, CheckCircle, ChevronLeft, ChevronRight // Added Chevron icons
+  Archive as ArchiveIcon, CheckCircle, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 
 export default function FileManagement() {
@@ -11,8 +11,16 @@ export default function FileManagement() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [teams, setTeams] = useState([]);
-  const fileInputRef = useRef(null);
-  const [currentUserTeamId, setCurrentUserTeamId] = useState(null);
+  const [userTeams, setUserTeams] = useState([]);
+
+  // --- Upload Modal States ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [environments, setEnvironments] = useState([]);
+  const [uploadForm, setUploadForm] = useState({
+    team_id: '',
+    environment_id: '',
+    file: null
+  });
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,18 +36,8 @@ export default function FileManagement() {
   useEffect(() => {
     fetchTeams();
     fetchFiles();
-    fetchMyTeam();
-    setCurrentPage(1); // Reset to page 1 when filters change
+    setCurrentPage(1);
   }, [filters]);
-
-  const fetchMyTeam = async () => {
-    try {
-      const res = await api.get('/teams/my-team-id');
-      setCurrentUserTeamId(res.data.team_id);
-    } catch (err) {
-      console.error("Failed to fetch user team info");
-    }
-  };
 
   const fetchTeams = async () => {
     try {
@@ -60,17 +58,47 @@ export default function FileManagement() {
     setLoading(false);
   };
 
-  // Pagination Calculations
+  // Pagination Logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentFiles = files.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(files.length / itemsPerPage);
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  // --- OPEN MODAL LOGIC ---
+  // Inside FileManagement.jsx
+  const handleOpenUploadModal = async () => {
+    try {
+      const teamsRes = await api.get('/teams/my-joined-teams');
+      const envRes = await api.get('/environments');
+
+      // Now these functions will exist!
+      setUserTeams(teamsRes.data);
+      setEnvironments(envRes.data);
+
+      // Auto-select if user belongs to only one team
+      if (teamsRes.data.length === 1) {
+        setUploadForm(prev => ({ ...prev, team_id: teamsRes.data[0].team_id }));
+      }
+
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error("Error opening modal:", err);
+      alert("Failed to load requirements.");
+    }
+  };
+
+  // --- SUBMIT UPLOAD LOGIC ---
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault();
+    if (!uploadForm.team_id || !uploadForm.file || !uploadForm.environment_id) {
+      alert("Please select a team, an environment, and a file.");
+      return;
+    }
+
+    const file = uploadForm.file;
     const ext = file.name.split('.').pop().toLowerCase();
     let formatId = 1;
+    if (ext === 'txt') formatId = 2;
     if (ext === 'json') formatId = 3;
     if (ext === 'csv') formatId = 4;
     if (ext === 'xml') formatId = 5;
@@ -78,17 +106,21 @@ export default function FileManagement() {
     const formData = new FormData();
     formData.append('file', file);
     setUploading(true);
+
     try {
-      await api.post(`/files/upload?team_id=${currentUserTeamId}&format_id=${formatId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      alert("File uploaded and parsed successfully!");
+      await api.post(
+        `/files/upload?team_id=${uploadForm.team_id}&format_id=${formatId}&environment_id=${uploadForm.environment_id}`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+      alert("✅ File uploaded and parsed successfully!");
+      setIsModalOpen(false);
+      setUploadForm({ team_id: '', environment_id: '', file: null });
       fetchFiles();
     } catch (err) {
       alert("Upload failed: " + (err.response?.data?.detail || "Server Error"));
     } finally {
       setUploading(false);
-      e.target.value = null;
     }
   };
 
@@ -99,69 +131,49 @@ export default function FileManagement() {
       try {
         await api.delete(`/files/${id}`);
         fetchFiles();
-      } catch (err) {
-        alert("Delete failed: " + (err.response?.data?.detail || "Error"));
-      }
+      } catch (err) { alert("Delete failed."); }
     }
   };
 
   const archiveFile = async (id) => {
-    if (window.confirm("Manual Archive: Are you sure you want to archive this file now?")) {
+    if (window.confirm("Manual Archive: Are you sure?")) {
       try {
         await api.patch(`/files/${id}/archive`);
         alert("File successfully moved to archives.");
         fetchFiles();
-      } catch (err) {
-        alert("Archive failed: " + (err.response?.data?.detail || "Error"));
-      }
+      } catch (err) { alert("Archive failed."); }
     }
   };
 
   const inputClass = "bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all";
 
   return (
-    <div className="p-6 space-y-6 bg-slate-50 min-h-screen">
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-        accept=".log,.txt,.json,.csv,.xml"
-      />
+    <div className="p-6 space-y-6 bg-slate-50 min-h-screen text-slate-900 font-sans">
+
+      {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">File Repository Management</h1>
         <button
-          onClick={() => fileInputRef.current.click()}
-          disabled={uploading}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition shadow-md disabled:opacity-50"
+          onClick={handleOpenUploadModal}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl flex items-center gap-2 transition shadow-lg shadow-indigo-200"
         >
-          {uploading ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
-          {uploading ? "Uploading..." : "New Log Upload"}
+          <Upload size={18} /> New Log Upload
         </button>
       </div>
 
+      {/* --- Filter Bar (Unchanged) --- */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end">
           <div className="relative lg:col-span-2">
             <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Filename Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-              <input
-                placeholder="Search..."
-                className={`${inputClass} w-full pl-10`}
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              />
+              <input placeholder="Search..." className={`${inputClass} w-full pl-10`} value={filters.search} onChange={(e) => setFilters({ ...filters, search: e.target.value })} />
             </div>
           </div>
           <div>
             <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Date Uploaded</label>
-            <input
-              type="date"
-              className={`${inputClass} w-33`}
-              value={filters.start_date}
-              onChange={(e) => setFilters({ ...filters, start_date: e.target.value })}
-            />
+            <input type="date" className={`${inputClass} w-full`} value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} />
           </div>
           <div>
             <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Environment</label>
@@ -189,63 +201,47 @@ export default function FileManagement() {
               {teams.map(t => <option key={t.team_id} value={t.team_id}>{t.team_name}</option>)}
             </select>
           </div>
-          <button
-            onClick={clearFilters}
-            className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200"
-          >
+          <button onClick={clearFilters} className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200">
             <RotateCcw size={16} /> Reset
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* --- Data Table --- */}
+      <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/60 overflow-hidden border border-slate-300">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] uppercase tracking-wider font-bold">
+            <thead className="bg-slate-50/50 text-slate-500 text-[11px] uppercase font-black tracking-widest">
               <tr>
-                <th className="p-4">ID</th>
-                <th className="p-4">File Name</th>
-                <th className="p-4">Uploader</th>
-                <th className="p-4">Team</th>
-                <th className="p-4">Size</th>
-                <th className="p-4 text-center">Action</th>
+                <th className="p-5">ID</th>
+                <th className="p-5">File Name</th>
+                <th className="p-5">Uploader</th>
+                <th className="p-5">Team</th>
+                <th className="p-5">Size</th>
+                <th className="p-5 text-center">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
+            <tbody className="divide-y divide-slate-50 text-sm">
               {loading ? (
-                <tr><td colSpan="6" className="text-center py-20"><Loader2 className="animate-spin mx-auto text-indigo-500" size={32} /></td></tr>
-              ) : (files.length === 0) ? (
-                <tr>
-                  <td colSpan="6" className="py-20 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <h1 className="text-xl font-bold text-red-500">File not found.......</h1>
-                      <p className="text-slate-400 text-sm">Try adjusting your filters.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (currentFiles.map(f => ( // Use currentFiles here
+                <tr><td colSpan="6" className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-indigo-500" size={32} /></td></tr>
+              ) : files.length === 0 ? (
+                <tr><td colSpan="6" className="py-20 text-center text-slate-400 italic">No files found.......</td></tr>
+              ) : (currentFiles.map(f => (
                 <tr key={f.file_id} className={`hover:bg-slate-50/50 transition ${f.is_archived ? 'bg-slate-50 opacity-75' : ''}`}>
-                  <td className="p-4 font-mono text-xs text-slate-400">#{f.file_id}</td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-700">{f.original_name}</span>
-                      {f.is_archived && <span className="bg-amber-100 text-amber-700 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Archived</span>}
-                    </div>
-                  </td>
-                  <td className="p-4 text-slate-600">
-                    {f.uploader_name ? f.uploader_name : <span className="text-slate-400 italic">Deleted User</span>}
-                  </td>
-                  <td className="p-4 font-bold text-indigo-600 text-xs">{f.team_name || 'Global'}</td>
-                  <td className="p-4 text-slate-500">{(f.file_size_bytes / 1024).toFixed(1)} KB</td>
-                  <td className="p-4 flex items-center justify-center gap-3">
+                  <td className="p-5 font-mono text-xs text-slate-400">#{f.file_id}</td>
+                  <td className="p-5 font-bold text-slate-700">{f.original_name}</td>
+                  <td className="p-5 text-slate-600">{f.uploader_name || 'Deleted User'}</td>
+                  <td className="p-5 font-bold text-indigo-600 text-xs">{f.team_name || 'Global'}</td>
+                  <td className="p-5 text-slate-500 font-medium italic">{(f.file_size_bytes / 1024).toFixed(1)} KB</td>
+                  <td className="p-5 flex items-center justify-center gap-3">
                     {!f.is_archived ? (
-                      <button onClick={() => archiveFile(f.file_id)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Archive Now">
+                      <button onClick={() => archiveFile(f.file_id)} className="p-2 text-slate-300 hover:text-amber-600 transition" title="Archive Now">
                         <ArchiveIcon size={16} />
                       </button>
                     ) : (
                       <div className="p-2 text-green-500" title="Archived"><CheckCircle size={16} /></div>
                     )}
-                    <button onClick={() => deleteFile(f.file_id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete Permanently">
+                    <button onClick={() => deleteFile(f.file_id)} className="p-2 text-slate-300 hover:text-red-600 transition" title="Delete Permanently">
                       <Trash2 size={16} />
                     </button>
                   </td>
@@ -255,41 +251,106 @@ export default function FileManagement() {
           </table>
         </div>
 
-        {/* Pagination Controls */}
-        {/* --- UPDATED PAGINATION FOOTER (Login Audit Style) --- */}
+        {/* Pagination Footer */}
         {!loading && files.length > itemsPerPage && (
-          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-            {/* Left side: Item Range Info */}
-            <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, files.length)}</span> of <span className="text-slate-700 font-bold">{files.length}</span> files
-            </div>
-
-            {/* Right side: Navigation Controls */}
+          <div className="bg-slate-50/50 px-6 py-4 flex items-center justify-between border-t border-slate-100">
+            <p className="text-xs font-bold text-slate-400 uppercase">Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, files.length)} of {files.length}</p>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
-              >
-                <ChevronLeft size={18} className="text-slate-600" />
-              </button>
-
-              {/* Modern Page Indicator */}
-              <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
-                {currentPage} / {totalPages}
-              </span>
-
-              <button
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-                className="p-2 rounded-lg border bg-white hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm"
-              >
-                <ChevronRight size={18} className="text-slate-600" />
-              </button>
+              <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 disabled:opacity-30 transition-all shadow-sm"><ChevronLeft size={18} /></button>
+              <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">{currentPage} / {totalPages}</span>
+              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)} className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 disabled:opacity-30 transition-all shadow-sm"><ChevronRight size={18} /></button>
             </div>
           </div>
         )}
       </div>
+
+      {/* --- UPLOAD MODAL --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden p-8 space-y-6 animate-in zoom-in duration-300 border-none">
+            <div className="flex justify-between items-center text-slate-800">
+              <h2 className="text-2xl font-black tracking-tight">New Log Upload</h2>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-2 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUploadSubmit} className="space-y-4">
+              {/* Team Selection - Now restricted to userTeams (Joined Teams) */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
+                  Your Assigned Team
+                </label>
+                <select
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                  value={uploadForm.team_id}
+                  onChange={(e) => setUploadForm({ ...uploadForm, team_id: e.target.value })}
+                  required
+                >
+                  <option value="">Select your team context...</option>
+                  {userTeams.map(t => (
+                    <option key={t.team_id} value={t.team_id}>
+                      {t.team_name}
+                    </option>
+                  ))}
+                </select>
+                {userTeams.length === 0 && (
+                  <p className="text-[10px] text-red-500 mt-1 ml-1 font-bold italic">
+                    Note: You are not currently assigned to any team.
+                  </p>
+                )}
+              </div>
+
+              {/* Environment Selection */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
+                  Target Environment
+                </label>
+                <select
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
+                  value={uploadForm.environment_id}
+                  onChange={(e) => setUploadForm({ ...uploadForm, environment_id: e.target.value })}
+                  required
+                >
+                  <option value="">Select Environment...</option>
+                  {environments.map(env => (
+                    <option key={env.environment_id} value={env.environment_id}>
+                      {env.environment_code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* File Selection */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
+                  Select Log Source
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })}
+                  className="text-sm block w-full text-slate-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-none file:text-xs file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 transition-all cursor-pointer"
+                  required
+                />
+              </div>
+
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={uploading || userTeams.length === 0}
+                  className="w-full py-3.5 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex justify-center items-center gap-2 disabled:opacity-50 uppercase tracking-widest"
+                >
+                  {uploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={18} />}
+                  {uploading ? "Parsing File..." : "Confirm Upload"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
