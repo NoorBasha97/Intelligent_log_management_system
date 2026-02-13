@@ -6,7 +6,7 @@ import UpdateUserModal from '../components/modals/UserUpdateModal';
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Used for both fetching and adding
   const [status, setStatus] = useState({ type: "", message: "" });
 
   // Pagination State
@@ -18,7 +18,7 @@ export default function UserManagement() {
 
   const [formData, setFormData] = useState({
     first_name: "",
-    last_name: "",
+    last_name: "", 
     phone_no: "",
     email: "",
     username: "",
@@ -31,11 +31,14 @@ export default function UserManagement() {
   }, []);
 
   const fetchUsers = async () => {
+    setLoading(true); // 🔥 Start loader
     try {
       const res = await api.get('/users/all');
       setUsers(res.data);
     } catch (err) {
       console.error("Failed to fetch users");
+    } finally {
+      setLoading(false); // 🔥 Stop loader
     }
   };
 
@@ -115,53 +118,69 @@ export default function UserManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {currentUsers.map(u => (
-              <tr key={u.user_id} className="hover:bg-slate-50/50 transition">
-                <td className="p-4">
-                  <p className="font-semibold text-slate-700">{u.first_name} {u.last_name}</p>
-                  <p className="text-xs text-slate-500">{u.email}</p>
-                </td>
-                <td className="p-4">
-                  <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium uppercase">
-                    {u.user_role}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {u.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                <td className="p-4 flex justify-center gap-2">
-                  <button
-                    onClick={() => handleEditClick(u)}
-                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                  <button
-                    onClick={() => deleteUser(u.user_id)}
-                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+            {/* 🔥 LOADER LOGIC 🔥 */}
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="py-20 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <Loader2 className="animate-spin text-indigo-600" size={40} />
+                    <span className="text-slate-500 font-medium text-xs uppercase tracking-widest">
+                      Loading Users...
+                    </span>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : currentUsers.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="py-20 text-center text-slate-400 italic">
+                  No users found in the system.
+                </td>
+              </tr>
+            ) : (
+              currentUsers.map(u => (
+                <tr key={u.user_id} className="hover:bg-slate-50/50 transition">
+                  <td className="p-4">
+                    <p className="font-semibold text-slate-700">{u.first_name} {u.last_name}</p>
+                    <p className="text-xs text-slate-500">{u.email}</p>
+                  </td>
+                  <td className="p-4">
+                    <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs font-medium uppercase">
+                      {u.user_role}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${u.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {u.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="p-4 flex justify-center gap-2">
+                    <button
+                      onClick={() => handleEditClick(u)}
+                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button
+                      onClick={() => deleteUser(u.user_id)}
+                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
 
         {/* Pagination Controls */}
-        {/* --- UPDATED PAGINATION FOOTER (Login Audit Style) --- */}
         {!loading && users.length > usersPerPage && (
           <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-            {/* Left side: Range Summary */}
             <div className="text-sm text-slate-500 font-medium">
               Showing <span className="text-slate-700 font-bold">{indexOfFirstUser + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastUser, users.length)}</span> of <span className="text-slate-700 font-bold">{users.length}</span> users
             </div>
 
-            {/* Right side: Minimalist Navigation */}
             <div className="flex items-center gap-2">
-              {/* Previous Button */}
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
@@ -170,12 +189,10 @@ export default function UserManagement() {
                 <ChevronLeft size={18} />
               </button>
 
-              {/* Page Display */}
               <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
                 {currentPage} / {totalPages}
               </span>
 
-              {/* Next Button */}
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages || totalPages === 0}
