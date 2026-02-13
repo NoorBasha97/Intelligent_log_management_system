@@ -31,14 +31,14 @@ export default function UserManagement() {
   }, []);
 
   const fetchUsers = async () => {
-    setLoading(true); // 🔥 Start loader
+    setLoading(true); //Start loader
     try {
       const res = await api.get('/users/all');
       setUsers(res.data);
     } catch (err) {
       console.error("Failed to fetch users");
     } finally {
-      setLoading(false); // 🔥 Stop loader
+      setLoading(false); //Stop loader
     }
   };
 
@@ -118,13 +118,13 @@ export default function UserManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {/* 🔥 LOADER LOGIC 🔥 */}
+            {/*  LOADER LOGIC  */}
             {loading ? (
               <tr>
                 <td colSpan="4" className="py-20 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
                     <Loader2 className="animate-spin text-indigo-600" size={40} />
-                    <span className="text-slate-500 font-medium text-xs uppercase tracking-widest">
+                    <span className="text-slate-500 font-medium text-xs tracking-widest">
                       Loading Users...
                     </span>
                   </div>

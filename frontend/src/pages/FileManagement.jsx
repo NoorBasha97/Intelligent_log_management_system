@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import api from '../api/axios';
 import {
   Upload, FileText, Trash2, Search, Calendar,
   Filter, Loader2, RotateCcw, Users as TeamIcon,
-  Archive as ArchiveIcon, CheckCircle, ChevronLeft, ChevronRight, X
+  Archive as ArchiveIcon, CheckCircle, ChevronLeft, ChevronRight, X, Files
 } from 'lucide-react';
 
 export default function FileManagement() {
@@ -12,14 +12,14 @@ export default function FileManagement() {
   const [uploading, setUploading] = useState(false);
   const [teams, setTeams] = useState([]);
   const [userTeams, setUserTeams] = useState([]);
-
-  // --- Upload Modal States ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [environments, setEnvironments] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // --- Upload Modal States 
   const [uploadForm, setUploadForm] = useState({
     team_id: '',
     environment_id: '',
-    file: null
+    files: [] //Changed from 'file' to 'files' array
   });
 
   // Pagination State
@@ -36,7 +36,7 @@ export default function FileManagement() {
   useEffect(() => {
     fetchTeams();
     fetchFiles();
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset pagination when filters change
   }, [filters]);
 
   const fetchTeams = async () => {
@@ -64,61 +64,55 @@ export default function FileManagement() {
   const currentFiles = files.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(files.length / itemsPerPage);
 
-  // --- OPEN MODAL LOGIC ---
-  // Inside FileManagement.jsx
   const handleOpenUploadModal = async () => {
     try {
+      // Fetch only the teams the Admin is actually a member of for uploading
       const teamsRes = await api.get('/teams/my-joined-teams');
       const envRes = await api.get('/environments');
 
-      // Now these functions will exist!
       setUserTeams(teamsRes.data);
       setEnvironments(envRes.data);
 
-      // Auto-select if user belongs to only one team
       if (teamsRes.data.length === 1) {
         setUploadForm(prev => ({ ...prev, team_id: teamsRes.data[0].team_id }));
       }
 
       setIsModalOpen(true);
     } catch (err) {
-      console.error("Error opening modal:", err);
-      alert("Failed to load requirements.");
+      alert("Failed to load upload requirements.");
     }
   };
 
-  // --- SUBMIT UPLOAD LOGIC ---
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
-    if (!uploadForm.team_id || !uploadForm.file || !uploadForm.environment_id) {
-      alert("Please select a team, an environment, and a file.");
+    if (!uploadForm.team_id || !uploadForm.environment_id || uploadForm.files.length === 0) {
+      alert("Please select a team, an environment, and at least one file.");
       return;
     }
 
-    const file = uploadForm.file;
-    const ext = file.name.split('.').pop().toLowerCase();
-    let formatId = 1;
-    if (ext === 'txt') formatId = 2;
-    if (ext === 'json') formatId = 3;
-    if (ext === 'csv') formatId = 4;
-    if (ext === 'xml') formatId = 5;
-
     const formData = new FormData();
-    formData.append('file', file);
+    // Append all files to the same key 'files' for the backend List[UploadFile]
+    uploadForm.files.forEach((file) => {
+      formData.append('files', file);
+    });
+
     setUploading(true);
 
     try {
+      // Backend now detects format_id per file, so we only pass team and env
       await api.post(
-        `/files/upload?team_id=${uploadForm.team_id}&format_id=${formatId}&environment_id=${uploadForm.environment_id}`,
+        `/files/upload?team_id=${uploadForm.team_id}&environment_id=${uploadForm.environment_id}`,
         formData,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
-      alert("✅ File uploaded and parsed successfully!");
+
+      alert(`✅ Successfully uploaded and parsed ${uploadForm.files.length} file(s)!`);
       setIsModalOpen(false);
-      setUploadForm({ team_id: '', environment_id: '', file: null });
+      setUploadForm({ team_id: '', environment_id: '', files: [] });
       fetchFiles();
     } catch (err) {
-      alert("Upload failed: " + (err.response?.data?.detail || "Server Error"));
+      const errorDetail = err.response?.data?.detail || "Batch upload failed.";
+      alert("❌ " + errorDetail);
     } finally {
       setUploading(false);
     }
@@ -149,7 +143,7 @@ export default function FileManagement() {
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen text-slate-900 font-sans">
-
+      
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">File Repository Management</h1>
@@ -161,7 +155,7 @@ export default function FileManagement() {
         </button>
       </div>
 
-      {/* --- Filter Bar (Unchanged) --- */}
+      {/* --- Filter Bar --- */}
       <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4 items-end">
           <div className="relative lg:col-span-2">
@@ -223,14 +217,14 @@ export default function FileManagement() {
             </thead>
             <tbody className="divide-y divide-slate-50 text-sm">
               {loading ? (
-                <tr><td colSpan="6" className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-indigo-500" size={32} /></td></tr>
+                <tr><td colSpan="6" className="text-center py-20"><Loader2 className="animate-spin mx-auto text-indigo-500" size={32} /></td></tr>
               ) : files.length === 0 ? (
                 <tr><td colSpan="6" className="py-20 text-center text-slate-400 italic">No files found.......</td></tr>
               ) : (currentFiles.map(f => (
                 <tr key={f.file_id} className={`hover:bg-slate-50/50 transition ${f.is_archived ? 'bg-slate-50 opacity-75' : ''}`}>
                   <td className="p-5 font-mono text-xs text-slate-400">#{f.file_id}</td>
                   <td className="p-5 font-bold text-slate-700">{f.original_name}</td>
-                  <td className="p-5 text-slate-600">{f.uploader_name || 'Deleted User'}</td>
+                  <td className="p-5 text-slate-600">{f.uploader_name || <span className="text-slate-400 italic">Deleted User</span>}</td>
                   <td className="p-5 font-bold text-indigo-600 text-xs">{f.team_name || 'Global'}</td>
                   <td className="p-5 text-slate-500 font-medium italic">{(f.file_size_bytes / 1024).toFixed(1)} KB</td>
                   <td className="p-5 flex items-center justify-center gap-3">
@@ -254,7 +248,9 @@ export default function FileManagement() {
         {/* Pagination Footer */}
         {!loading && files.length > itemsPerPage && (
           <div className="bg-slate-50/50 px-6 py-4 flex items-center justify-between border-t border-slate-100">
-            <p className="text-xs font-bold text-slate-400 uppercase">Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, files.length)} of {files.length}</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, files.length)} of {files.length} Files
+            </p>
             <div className="flex items-center gap-2">
               <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="p-2 rounded-xl bg-white border border-slate-200 text-slate-600 disabled:opacity-30 transition-all shadow-sm"><ChevronLeft size={18} /></button>
               <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">{currentPage} / {totalPages}</span>
@@ -264,51 +260,31 @@ export default function FileManagement() {
         )}
       </div>
 
-      {/* --- UPLOAD MODAL --- */}
+      {/* --- MULTI-FILE UPLOAD MODAL --- */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
           <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden p-8 space-y-6 animate-in zoom-in duration-300 border-none">
             <div className="flex justify-between items-center text-slate-800">
-              <h2 className="text-2xl font-black tracking-tight">New Log Upload</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
+              <h2 className="text-2xl font-black tracking-tight">Batch Log Upload</h2>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full"><X size={20} /></button>
             </div>
 
             <form onSubmit={handleUploadSubmit} className="space-y-4">
-              {/* Team Selection - Now restricted to userTeams (Joined Teams) */}
               <div>
-                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
-                  Your Assigned Team
-                </label>
-                <select
-                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
-                  value={uploadForm.team_id}
-                  onChange={(e) => setUploadForm({ ...uploadForm, team_id: e.target.value })}
+                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Assign to Team</label>
+                <select 
+                  className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer" 
+                  value={uploadForm.team_id} 
+                  onChange={(e) => setUploadForm({...uploadForm, team_id: e.target.value})}
                   required
                 >
                   <option value="">Select your team context...</option>
-                  {userTeams.map(t => (
-                    <option key={t.team_id} value={t.team_id}>
-                      {t.team_name}
-                    </option>
-                  ))}
+                  {userTeams.map(t => <option key={t.team_id} value={t.team_id}>{t.team_name}</option>)}
                 </select>
-                {userTeams.length === 0 && (
-                  <p className="text-[10px] text-red-500 mt-1 ml-1 font-bold italic">
-                    Note: You are not currently assigned to any team.
-                  </p>
-                )}
               </div>
 
-              {/* Environment Selection */}
               <div>
-                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
-                  Target Environment
-                </label>
+                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Target Environment</label>
                 <select
                   className="w-full bg-slate-50 border-none rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer"
                   value={uploadForm.environment_id}
@@ -316,35 +292,44 @@ export default function FileManagement() {
                   required
                 >
                   <option value="">Select Environment...</option>
-                  {environments.map(env => (
-                    <option key={env.environment_id} value={env.environment_id}>
-                      {env.environment_code}
-                    </option>
-                  ))}
+                  {environments.map(env => <option key={env.environment_id} value={env.environment_id}>{env.environment_code}</option>)}
                 </select>
               </div>
 
-              {/* File Selection */}
               <div>
-                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">
-                  Select Log Source
-                </label>
-                <input
-                  type="file"
-                  onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })}
-                  className="text-sm block w-full text-slate-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-none file:text-xs file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 transition-all cursor-pointer"
-                  required
-                />
+                <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Select Files (Multi)</label>
+                <div className="relative border-2 border-dashed border-slate-200 rounded-3xl p-6 hover:bg-slate-50 transition-colors group">
+                   <input 
+                    type="file" 
+                    multiple // ALLOWS MULTIPLE FILES
+                    onChange={(e) => setUploadForm({ ...uploadForm, files: Array.from(e.target.files) })} 
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    required 
+                  />
+                  <div className="text-center">
+                    <Files className="mx-auto text-slate-300 group-hover:text-indigo-400 transition-colors mb-2" size={32} />
+                    <p className="text-sm font-bold text-slate-600">
+                      {uploadForm.files.length > 0 
+                        ? `${uploadForm.files.length} files selected` 
+                        : "Click to select multiple log files"}
+                    </p>
+                    <p className="text-[10px] text-slate-400 uppercase mt-1">.log, .txt, .json, .csv, .xml</p>
+                  </div>
+                </div>
+                {/* List selected filenames */}
+                <div className="mt-2 max-h-24 overflow-y-auto space-y-1">
+                   {uploadForm.files.map((f, i) => (
+                     <div key={i} className="text-[10px] text-slate-500 flex items-center gap-1 font-medium bg-slate-50 px-2 py-1 rounded">
+                       <FileText size={10} className="text-indigo-500" /> {f.name}
+                     </div>
+                   ))}
+                </div>
               </div>
 
               <div className="pt-4">
-                <button
-                  type="submit"
-                  disabled={uploading || userTeams.length === 0}
-                  className="w-full py-3.5 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex justify-center items-center gap-2 disabled:opacity-50 uppercase tracking-widest"
-                >
-                  {uploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={18} />}
-                  {uploading ? "Parsing File..." : "Confirm Upload"}
+                <button type="submit" disabled={uploading || userTeams.length === 0} className="w-full py-3.5 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all flex justify-center items-center gap-2 disabled:opacity-50 uppercase tracking-widest">
+                  {uploading ? <Loader2 className="animate-spin" size={20}/> : <Upload size={18}/>}
+                  {uploading ? "Processing Batch..." : "Confirm Batch Upload"}
                 </button>
               </div>
             </form>

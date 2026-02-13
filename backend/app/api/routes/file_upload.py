@@ -7,9 +7,10 @@ from app.models.file_formats import FileFormat
 from app.schemas.raw_file import RawFileResponse
 from app.services.file_storage import save_file_locally
 from app.services.log_parser.manager import parse_and_store_logs
-from app.api.deps import get_active_user, get_current_user
+from app.api.deps import get_active_user
 from app.models.user import User
 from app.models.log_entries import Environment
+from typing import List
 
 router = APIRouter(prefix="/files", tags=["File Upload"])
 
@@ -18,15 +19,15 @@ def get_db():
     try: yield db
     finally: db.close() 
 
-@router.post("/upload", response_model=RawFileResponse)
-def upload_file(
+@router.post("/upload", response_model=List[RawFileResponse]) # Changed to List
+def upload_files(
     team_id: int,
-    format_id: int,
     environment_id: int,
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(...), # Changed to List[UploadFile]
     db: Session = Depends(get_db),
-    current_user : User = Depends(get_active_user) # 'user' is an object, not a Session
+    current_user: User = Depends(get_active_user)
 ):
+    # Security Check
     if current_user.user_role != "ADMIN":
         from app.models.user_teams import UserTeam
         membership = db.query(UserTeam).filter(
@@ -37,56 +38,72 @@ def upload_file(
             raise HTTPException(status_code=403, detail="You do not belong to this team")
         
     db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
-        
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="File name is missing")
 
-    # 1. Identify format name (e.g., 'JSON', 'LOG')
-    fmt = db.query(FileFormat).filter(FileFormat.format_id == format_id).first()
-    if not fmt:
-        raise HTTPException(status_code=400, detail="Invalid format_id")
-    
-     # 2. Identify Environment Code
+    # 1. PRE-VALIDATION: Check all files before processing any
+    valid_formats = {f.format_name.lower(): f.format_id for f in db.query(FileFormat).all()}
     env = db.query(Environment).filter(Environment.environment_id == environment_id).first()
+    
     if not env:
         raise HTTPException(status_code=400, detail="Invalid environment_id")
 
-    # 2. Save file locally
-    file_path, file_size = save_file_locally(team_id, file)
-
-    try:
-        # 3. Store metadata
-        raw_file = RawFile( 
-            team_id=team_id,
-            uploaded_by=current_user.user_id,
-            original_name=file.filename,
-            file_size_bytes=file_size,
-            format_id=format_id
-        )
-        db.add(raw_file)
-        db.flush()
-
-        # 4. Read and Parse
-        with open(file_path, "r", encoding="utf-8-sig") as f:
-            raw_text = f.read()
-
-        parse_and_store_logs(
-            db=db,
-            file_id=raw_file.file_id,
-            raw_text=raw_text,
-            format_name=fmt.format_name,
-            environment_code=env.environment_code
-        )
+    files_to_process = []
+    for file in files:
+        ext = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
+        # Map specific extensions to DB format names
+        # Logic: .log/.txt -> LOG, .json -> JSON, .csv -> CSV, .xml -> XML
+        fmt_name = 'LOG' if ext in ['log', 'txt'] else ext.upper()
         
-        db.flush()
+        if fmt_name.lower() not in valid_formats:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File '{file.filename}' has an unsupported format: {ext.upper()}. Upload canceled."
+            )
+        
+        files_to_process.append({
+            "file_obj": file,
+            "format_id": valid_formats[fmt_name.lower()],
+            "format_name": fmt_name
+        })
+
+    # 2. PROCESSING: Loop and store
+    processed_files = []
+    try:
+        for item in files_to_process:
+            file = item["file_obj"]
+            
+            # Save file locally
+            file_path, file_size = save_file_locally(team_id, file)
+
+            # Store metadata
+            new_raw_file = RawFile( 
+                team_id=team_id,
+                uploaded_by=current_user.user_id,
+                original_name=file.filename,
+                file_size_bytes=file_size,
+                format_id=item["format_id"]
+            )
+            db.add(new_raw_file)
+            db.flush() 
+
+            # Read and Parse
+            with open(file_path, "r", encoding="utf-8-sig") as f:
+                raw_text = f.read()
+
+            parse_and_store_logs(
+                db=db,
+                file_id=new_raw_file.file_id,
+                raw_text=raw_text,
+                format_name=item["format_name"],
+                environment_code=env.environment_code
+            )
+            processed_files.append(new_raw_file)
+        
         db.commit()
-        db.refresh(raw_file)
-        return raw_file
+        for f in processed_files: db.refresh(f)
+        return processed_files
 
     except Exception as e:
         db.rollback()
         import traceback
-        # This will print the full error in your terminal
         print(traceback.format_exc()) 
-        # This will send the error message to the frontend so you can see it in the Alert
-        raise HTTPException(status_code=500, detail=f"Crashed at: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Batch processing failed: {str(e)}")

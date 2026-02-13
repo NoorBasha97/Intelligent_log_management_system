@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { 
-  User, Users, Loader2, FileText, Upload, 
-  HardDrive, X, Trash2, ChevronLeft, ChevronRight 
+import {
+  User, Users, Loader2, FileText, Upload,
+  HardDrive, X, Trash2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 export default function MyLogs() {
@@ -58,7 +58,7 @@ export default function MyLogs() {
         api.get('/teams/my-joined-teams'),
         api.get('/environments')
       ]);
-      
+
       const activeTeams = teamsRes.data;
       setUserTeams(activeTeams);
       setEnvironments(envRes.data);
@@ -76,41 +76,80 @@ export default function MyLogs() {
     }
   };
 
+  // const handleUploadSubmit = async (e) => {
+  //   e.preventDefault();
+  //   if (!uploadForm.team_id || !uploadForm.file || !uploadForm.environment_id) {
+  //     alert("Please select team, environment and file.");
+  //     return;
+  //   }
+
+  //   const file = uploadForm.file;
+  //   const ext = file.name.split('.').pop().toLowerCase();
+  //   let formatId = 1;
+  //   if (ext === 'txt') formatId = 2;
+  //   if (ext === 'json') formatId = 3;
+  //   if (ext === 'csv') formatId = 4;
+  //   if (ext === 'xml') formatId = 5;
+
+  //   const formData = new FormData();
+  //   formData.append('file', file);
+  //   setUploading(true);
+
+    
+  //   try {
+  //     await api.post(
+  //       `/files/upload?team_id=${uploadForm.team_id}&format_id=${formatId}&environment_id=${uploadForm.environment_id}`,
+  //       formData,
+  //       { headers: { 'Content-Type': 'multipart/form-data' } }
+  //     );
+  //     alert("✅ Upload success!");
+  //     setIsModalOpen(false);
+  //     setUploadForm({ team_id: '', environment_id: '', file: null });
+  //     fetchFiles();
+  //   } catch (err) {
+  //     alert("❌ Upload failed: " + (err.response?.data?.detail || "Error"));
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
+
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
-    if (!uploadForm.team_id || !uploadForm.file || !uploadForm.environment_id) {
-      alert("Please select team, environment and file.");
-      return;
+
+    // 1. Validation
+    if (!uploadForm.team_id || !uploadForm.environment_id || !uploadForm.files || uploadForm.files.length === 0) {
+        alert("Please select team, environment and at least one file.");
+        return;
     }
 
-    const file = uploadForm.file;
-    const ext = file.name.split('.').pop().toLowerCase();
-    let formatId = 1;
-    if (ext === 'txt') formatId = 2;
-    if (ext === 'json') formatId = 3;
-    if (ext === 'csv') formatId = 4;
-    if (ext === 'xml') formatId = 5;
-
     const formData = new FormData();
-    formData.append('file', file);
+    //  Append every file to the same key 'files'
+    uploadForm.files.forEach((file) => {
+        formData.append('files', file);
+    });
+
     setUploading(true);
 
     try {
-      await api.post(
-        `/files/upload?team_id=${uploadForm.team_id}&format_id=${formatId}&environment_id=${uploadForm.environment_id}`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      );
-      alert("✅ Upload success!");
-      setIsModalOpen(false);
-      setUploadForm({ team_id: '', environment_id: '', file: null });
-      fetchFiles();
+        // Note: we no longer send format_id from frontend because backend detects it per file now
+        await api.post(
+            `/files/upload?team_id=${uploadForm.team_id}&environment_id=${uploadForm.environment_id}`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+
+        alert(`✅ ${uploadForm.files.length} file(s) uploaded and parsed successfully!`);
+        setIsModalOpen(false);
+        setUploadForm({ team_id: '', environment_id: '', files: [] }); // Reset
+        fetchFiles();
+        
     } catch (err) {
-      alert("❌ Upload failed: " + (err.response?.data?.detail || "Error"));
+        const errorDetail = err.response?.data?.detail || "Batch upload failed.";
+        alert("❌ " + errorDetail);
     } finally {
-      setUploading(false);
+        setUploading(false);
     }
-  };
+};
 
   const handleDelete = async (id) => {
     if (window.confirm("Permanent Delete?")) {
@@ -217,7 +256,7 @@ export default function MyLogs() {
             <form onSubmit={handleUploadSubmit} className="space-y-4">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Target Team</label>
-                <select className="w-full bg-slate-50 rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 appearance-none" value={uploadForm.team_id} onChange={(e) => setUploadForm({...uploadForm, team_id: e.target.value})} required>
+                <select className="w-full bg-slate-50 rounded-2xl px-4 py-3.5 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 appearance-none" value={uploadForm.team_id} onChange={(e) => setUploadForm({ ...uploadForm, team_id: e.target.value })} required>
                   <option value="">Select team...</option>
                   {userTeams.map(t => <option key={t.team_id} value={t.team_id}>{t.team_name}</option>)}
                 </select>
@@ -233,12 +272,19 @@ export default function MyLogs() {
 
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Select Source File</label>
-                <input type="file" onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })} className="text-sm block w-full text-slate-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-none file:text-xs file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700" required />
+                <input
+                  type="file"
+                  multiple // Allow multiple files
+                  onChange={(e) => setUploadForm({ ...uploadForm, files: Array.from(e.target.files) })} // 🔥 Store as Array
+                  className="..."
+                  required
+                />
+                {/* <input type="file" onChange={(e) => setUploadForm({ ...uploadForm, file: e.target.files[0] })} className="text-sm block w-full text-slate-500 file:mr-4 file:py-2.5 file:px-6 file:rounded-xl file:border-none file:text-xs file:font-black file:bg-indigo-600 file:text-white hover:file:bg-indigo-700" required /> */}
               </div>
 
               <div className="pt-4">
                 <button type="submit" disabled={uploading} className="w-full py-3.5 bg-indigo-600 text-white font-black rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 flex justify-center items-center gap-2 disabled:opacity-50">
-                  {uploading ? <Loader2 className="animate-spin" size={20}/> : <Upload size={18}/>} UPLOAD NOW
+                  {uploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={18} />} UPLOAD NOW
                 </button>
               </div>
             </form>
