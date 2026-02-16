@@ -10,6 +10,7 @@ export default function LogManagement() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [teams, setTeams] = useState([]);
+  const [totalLogsCount, setTotalLogsCount] = useState(0);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,9 +29,14 @@ export default function LogManagement() {
 
   useEffect(() => {
     fetchTeams();
-    fetchLogs();
     setCurrentPage(1); // Reset to page 1 when filters change
   }, [filters]);
+
+  // this is for the purprose of sever-side pagination
+  useEffect(() => {
+    fetchLogs();
+  }, [filters,currentPage]);
+
 
   const fetchTeams = async () => {
     try {
@@ -39,15 +45,37 @@ export default function LogManagement() {
     } catch (err) { console.error("Could not fetch teams"); }
   };
 
+
+
+  //we need to send the limit and offset(based on the current page) to the backend to fetch the logs
   const fetchLogs = async () => {
     setLoading(true);
     try {
+      // Define the limit and calculate the offset
+      const limit = 10; 
+      const offset = (currentPage - 1) * limit;
+
+      //Prepare the parameters object
+      const queryParams = {
+        ...filters,
+        limit: limit,   // this will tell backend how many rows to send
+        offset: offset  // this will tell backend how many rows to skip
+      };
+
+      //Clean parameters (Remove empty strings)
       const cleanedParams = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== "")
+        Object.entries(queryParams).filter(([_, v]) => v !== "" && v !== null)
       );
 
+      //API Call
       const res = await api.get('/logs', { params: cleanedParams });
+      
+      //Update State
       setLogs(res.data?.items || []);
+      
+      // IMPORTANT: Update total count for pagination UI calculation
+      setTotalLogsCount(res.data?.total || 0); 
+
     } catch (err) {
       console.error("API Error", err);
       setLogs([]);
@@ -55,11 +83,17 @@ export default function LogManagement() {
     setLoading(false);
   };
 
-  // Pagination Logic
-  const indexOfLastLog = currentPage * logsPerPage;
-  const indexOfFirstLog = indexOfLastLog - logsPerPage;
-  const currentLogs = logs.slice(indexOfFirstLog, indexOfLastLog);
-  const totalPages = Math.ceil(logs.length / logsPerPage);
+
+const currentLogs = logs; 
+
+// 2. totalPages MUST use the total count from the database, not the array length
+// (Because logs.length will always be 10)
+const totalPages = Math.ceil(totalLogsCount / logsPerPage);
+
+// 3. These are now used ONLY for the "Showing X to Y" text labels
+const indexOfFirstLog = (currentPage - 1) * logsPerPage; 
+const indexOfLastLog = indexOfFirstLog + currentLogs.length;
+
 
   const clearFilters = () => setFilters(initialFilters);
 
@@ -171,9 +205,11 @@ export default function LogManagement() {
         {!loading && logs.length > logsPerPage && (
           <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
             {/* Left side: Range Info */}
-            <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700 font-bold">{indexOfFirstLog + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastLog, logs.length)}</span> of <span className="text-slate-700 font-bold">{logs.length}</span> entries
-            </div>
+            <div className="text-sm text-slate-500">
+  Showing <span className="font-medium">{indexOfFirstLog + 1}</span> to{" "}
+  <span className="font-medium">{Math.min(indexOfLastLog, totalLogsCount)}</span> of{" "}
+  <span className="font-medium">{totalLogsCount}</span> entries
+</div>
 
             {/* Right side: Navigation */}
             <div className="flex items-center gap-2">

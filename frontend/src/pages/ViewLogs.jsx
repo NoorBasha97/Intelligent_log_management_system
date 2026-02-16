@@ -3,12 +3,13 @@ import api from '../api/axios';
 import {
   Terminal, Loader2, FileText, Clock,
   Search, Calendar, RotateCcw, SlidersHorizontal,
-  ChevronLeft, ChevronRight // Added for pagination
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 
 export default function ViewLogs() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [totalLogsCount, setTotalLogsCount] = useState(0);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,30 +25,53 @@ export default function ViewLogs() {
   const [filters, setFilters] = useState(initialFilters);
 
   useEffect(() => {
-    fetchLogEntries();
     setCurrentPage(1); // Reset to page 1 when filters change
   }, [filters]);
 
+  //this is for server-side pagination
+   useEffect(() => {
+    fetchLogEntries();
+  }, [filters,currentPage]);
+
   const fetchLogEntries = async () => {
-    setLoading(true);
-    try {
-      const cleanedParams = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== "")
-      );
+  setLoading(true);
+  try {
+    const limit = itemsPerPage;
+    const offset = (currentPage - 1) * limit; //  Calculate skip value
 
-      const res = await api.get('/logs/me', { params: cleanedParams });
-      setEntries(res.data?.items || []);
-    } catch (err) {
-      console.error("Error fetching personal logs:", err);
-    }
-    setLoading(false);
-  };
+    // Prepare params including limit and offset
+    const params = {
+      ...filters,
+      limit: limit,
+      offset: offset
+    };
 
-  // Pagination Logic
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentEntries = entries.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(entries.length / itemsPerPage);
+    const cleanedParams = Object.fromEntries(
+      Object.entries(params).filter(([_, v]) => v !== "")
+    );
+
+    const res = await api.get('/logs/me', { params: cleanedParams });
+    
+    //  Update states with the sliced data from server
+    setEntries(res.data?.items || []);
+    setTotalLogsCount(res.data?.total || 0); // Get the total count from DB
+  } catch (err) {
+    console.error("Error fetching personal logs:", err);
+  }
+  setLoading(false);
+};
+
+//Pagination Logic
+// currentEntries is now exactly what the backend sent (already sliced)
+const currentEntries = entries; 
+
+// totalPages uses the total count from the DB
+const totalPages = Math.ceil(totalLogsCount / itemsPerPage);
+
+// For the "Showing X to Y" labels
+const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+const indexOfLastItem = indexOfFirstItem + currentEntries.length;
+
 
   const clearFilters = () => setFilters(initialFilters);
 
@@ -142,7 +166,7 @@ export default function ViewLogs() {
                   </td>
                 </tr>
               ) : (
-                currentEntries.map(log => ( // Changed from entries to currentEntries
+                currentEntries.map(log => (
                   <tr key={log.log_id} className="hover:bg-slate-50 transition-colors align-top">
                     <td className="p-4 text-slate-500 whitespace-nowrap tabular-nums">
                       {new Date(log.log_timestamp).toLocaleString()}

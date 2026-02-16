@@ -34,7 +34,7 @@ def get_logs(
     team_id: Optional[int] = Query(None),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
-    limit: int = 100,
+    limit: int = 10,
     offset: int = 0
 ):
     """
@@ -99,7 +99,7 @@ def get_user_logs(
     category_name: str = Query(None),
     start_date: str = Query(None),
     end_date: str = Query(None),
-    limit: int = 100,
+    limit: int = 10,
     offset: int = 0
 ):
     target_user_id = None

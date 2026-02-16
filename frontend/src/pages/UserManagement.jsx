@@ -18,7 +18,7 @@ export default function UserManagement() {
 
   const [formData, setFormData] = useState({
     first_name: "",
-    last_name: "", 
+    last_name: "",
     phone_no: "",
     email: "",
     username: "",
@@ -123,10 +123,12 @@ export default function UserManagement() {
               <tr>
                 <td colSpan="4" className="py-20 text-center">
                   <div className="flex flex-col items-center justify-center gap-3">
-                    <Loader2 className="animate-spin text-indigo-600" size={40} />
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600">
+                      
+                    </div>
                     <span className="text-slate-500 font-medium text-xs tracking-widest">
-                      Loading Users...
-                    </span>
+                        Loading Users...
+                      </span>
                   </div>
                 </td>
               </tr>
