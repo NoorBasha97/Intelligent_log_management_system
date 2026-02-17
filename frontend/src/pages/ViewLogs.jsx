@@ -84,19 +84,19 @@ export default function ViewLogs() {
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen font-sans">
-
-      {/* Header Area */}
+      
+      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 bg-indigo-600 rounded-lg text-white shadow-md">
           <Terminal size={24} />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Personal Log Explorer</h1>
-          <p className="text-sm text-slate-500 font-medium">Search and filter through your uploaded log data</p>
+          <p className="text-sm text-slate-500 font-medium">Viewing parsed log lines from your uploads</p>
         </div>
       </div>
 
-      {/* --- ADVANCED FILTER BAR --- */}
+     {/* --- ADVANCED FILTER BAR --- */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 text-slate-800 font-semibold border-b border-slate-50 pb-4">
           <SlidersHorizontal size={18} className="text-indigo-600" />
@@ -137,9 +137,9 @@ export default function ViewLogs() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr className="text-slate-500 text-[11px] uppercase font-bold tracking-wider">
-                <th className="p-4 w-48"><div className="flex items-center gap-2"><Clock size={12} /> Timestamp</div></th>
+                <th className="p-4 w-48"><div className="flex items-center gap-2"><Clock size={12}/> Timestamp</div></th>
                 <th className="p-4 w-28 text-center">Level</th>
-                <th className="p-4 w-40">Source File</th>
+                <th className="p-4 w-40 text-center">Source File</th>
                 <th className="p-4">Message Details</th>
               </tr>
             </thead>
@@ -153,15 +153,12 @@ export default function ViewLogs() {
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="py-32 text-center">
-                    <div className="flex flex-col items-center justify-center text-slate-400 font-sans italic">
-                      <p className="text-lg font-bold text-slate-300 mb-2">No entries found matching criteria</p>
-                      <button onClick={clearFilters} className="text-indigo-600 hover:underline text-sm font-semibold not-italic">Reset all filters</button>
-                    </div>
+                  <td colSpan="4" className="py-32 text-center text-slate-400 font-sans italic">
+                    No entries found. Adjust your filters or upload more files.
                   </td>
                 </tr>
               ) : (
-                currentEntries.map(log => (
+                entries.map(log => (
                   <tr key={log.log_id} className="hover:bg-slate-50 transition-colors align-top">
                     <td className="p-4 text-slate-500 whitespace-nowrap tabular-nums">
                       {new Date(log.log_timestamp).toLocaleString()}
@@ -171,10 +168,10 @@ export default function ViewLogs() {
                         {log.severity_code}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2 text-indigo-600 font-semibold truncate max-w-[150px]" title={log.file_name}>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-indigo-600 font-semibold truncate max-w-[150px] mx-auto" title={log.file_name}>
                         <FileText size={14} className="opacity-70 shrink-0" />
-                        {log.file_name}
+                        <span className="truncate text-xs">{log.file_name}</span>
                       </div>
                     </td>
                     <td className="p-4 text-slate-900 break-all leading-relaxed pr-6">
@@ -187,15 +184,12 @@ export default function ViewLogs() {
           </table>
         </div>
 
-        {/* --- PAGINATION CONTROLS --- */}
-        {!loading && entries.length > itemsPerPage && (
+        {/* --- PAGINATION FOOTER --- */}
+        {!loading && totalLogsCount > itemsPerPage && (
           <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-            {/* Left side: Range Info */}
             <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, entries.length)}</span> of <span className="text-slate-700 font-bold">{entries.length}</span> logs
+              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, totalLogsCount)}</span> of <span className="text-slate-700 font-bold">{totalLogsCount}</span> logs
             </div>
-
-            {/* Right side: Navigation */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -204,12 +198,9 @@ export default function ViewLogs() {
               >
                 <ChevronLeft size={18} className="text-slate-600" />
               </button>
-
-              {/* Page Display */}
               <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
                 {currentPage} / {totalPages}
               </span>
-
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
