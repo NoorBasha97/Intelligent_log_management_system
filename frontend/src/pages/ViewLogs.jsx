@@ -84,65 +84,50 @@ export default function ViewLogs() {
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen font-sans">
-      
-      {/* Header */}
+
+      {/* Header Area */}
       <div className="flex items-center gap-3">
         <div className="p-2 bg-indigo-600 rounded-lg text-white shadow-md">
           <Terminal size={24} />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Personal Log Explorer</h1>
-          <p className="text-sm text-slate-500 font-medium">Viewing parsed log lines from your uploads</p>
+          <p className="text-sm text-slate-500 font-medium">Search and filter through your uploaded log data</p>
         </div>
       </div>
 
       {/* --- ADVANCED FILTER BAR --- */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 text-slate-800 font-semibold border-b border-slate-50 pb-4">
           <SlidersHorizontal size={18} className="text-indigo-600" />
           <span>Search & Filter</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mt-4">
-          {/* restored Keyword Search */}
-          <div className="md:col-span-1">
-            <label className={labelClass}>Keyword Search</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-              <input 
-                placeholder="Search messages..." 
-                className={`${inputClass} pl-10`} 
-                value={filters.search}
-                onChange={(e) => setFilters({...filters, search: e.target.value})}
-              />
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end border-t border-slate-50 mt-4 pt-4">
           <div>
             <label className={labelClass}>From Date</label>
-            <input type="date" className={inputClass} value={filters.start_date} onChange={(e) => setFilters({...filters, start_date: e.target.value})} />
+            <input type="date" className={inputClass} value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} />
           </div>
-
           <div>
             <label className={labelClass}>To Date</label>
-            <input type="date" className={inputClass} value={filters.end_date} onChange={(e) => setFilters({...filters, end_date: e.target.value})} />
+            <input type="date" className={inputClass} value={filters.end_date} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} />
           </div>
-
           <div>
             <label className={labelClass}>Severity</label>
-            <select className={inputClass} value={filters.severity_code} onChange={(e) => setFilters({...filters, severity_code: e.target.value})}>
+            <select className={inputClass} value={filters.severity_code} onChange={(e) => setFilters({ ...filters, severity_code: e.target.value })}>
               <option value="">All Severities</option>
               <option value="ERROR">ERROR</option>
               <option value="WARN">WARN</option>
               <option value="INFO">INFO</option>
+              <option value="FATAL">FATAL</option>
             </select>
           </div>
-          
-          <div className="md:col-start-4">
-             <button onClick={clearFilters} className="flex items-center justify-center gap-2 w-full h-[38px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-all">
-               <RotateCcw size={16} /> Reset
-             </button>
-          </div>
+          <button
+            onClick={clearFilters}
+            className="flex items-center justify-center gap-2 h-[38px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-all shadow-sm"
+          >
+            <RotateCcw size={16} /> Reset Filters
+          </button>
         </div>
       </div>
 
@@ -152,9 +137,9 @@ export default function ViewLogs() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr className="text-slate-500 text-[11px] uppercase font-bold tracking-wider">
-                <th className="p-4 w-48"><div className="flex items-center gap-2"><Clock size={12}/> Timestamp</div></th>
+                <th className="p-4 w-48"><div className="flex items-center gap-2"><Clock size={12} /> Timestamp</div></th>
                 <th className="p-4 w-28 text-center">Level</th>
-                <th className="p-4 w-40 text-center">Source File</th>
+                <th className="p-4 w-40">Source File</th>
                 <th className="p-4">Message Details</th>
               </tr>
             </thead>
@@ -168,12 +153,15 @@ export default function ViewLogs() {
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="py-32 text-center text-slate-400 font-sans italic">
-                    No entries found. Adjust your filters or upload more files.
+                  <td colSpan="4" className="py-32 text-center">
+                    <div className="flex flex-col items-center justify-center text-slate-400 font-sans italic">
+                      <p className="text-lg font-bold text-slate-300 mb-2">No entries found matching criteria</p>
+                      <button onClick={clearFilters} className="text-indigo-600 hover:underline text-sm font-semibold not-italic">Reset all filters</button>
+                    </div>
                   </td>
                 </tr>
               ) : (
-                entries.map(log => (
+                currentEntries.map(log => (
                   <tr key={log.log_id} className="hover:bg-slate-50 transition-colors align-top">
                     <td className="p-4 text-slate-500 whitespace-nowrap tabular-nums">
                       {new Date(log.log_timestamp).toLocaleString()}
@@ -183,10 +171,10 @@ export default function ViewLogs() {
                         {log.severity_code}
                       </span>
                     </td>
-                    <td className="p-4 text-center">
-                      <div className="flex items-center justify-center gap-2 text-indigo-600 font-semibold truncate max-w-[150px] mx-auto" title={log.file_name}>
+                    <td className="p-4">
+                      <div className="flex items-center gap-2 text-indigo-600 font-semibold truncate max-w-[150px]" title={log.file_name}>
                         <FileText size={14} className="opacity-70 shrink-0" />
-                        <span className="truncate text-xs">{log.file_name}</span>
+                        {log.file_name}
                       </div>
                     </td>
                     <td className="p-4 text-slate-900 break-all leading-relaxed pr-6">
@@ -199,12 +187,15 @@ export default function ViewLogs() {
           </table>
         </div>
 
-        {/* --- PAGINATION FOOTER --- */}
-        {!loading && totalLogsCount > itemsPerPage && (
+        {/* --- PAGINATION CONTROLS --- */}
+        {!loading && entries.length > itemsPerPage && (
           <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+            {/* Left side: Range Info */}
             <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, totalLogsCount)}</span> of <span className="text-slate-700 font-bold">{totalLogsCount}</span> logs
+              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, entries.length)}</span> of <span className="text-slate-700 font-bold">{entries.length}</span> logs
             </div>
+
+            {/* Right side: Navigation */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -213,9 +204,12 @@ export default function ViewLogs() {
               >
                 <ChevronLeft size={18} className="text-slate-600" />
               </button>
+
+              {/* Page Display */}
               <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
                 {currentPage} / {totalPages}
               </span>
+
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
