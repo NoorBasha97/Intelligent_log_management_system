@@ -8,7 +8,7 @@ class LogRepository:
     @staticmethod
     def list_logs(db: Session, *, team_id=None, user_id=None, start_date=None, end_date=None, 
                   severity_code=None, category_name=None, environment_code=None, 
-                  file_id=None, search=None, limit=100, offset=0):
+                  file_id=None, search=None, limit=10, offset=0):
         
         query = db.query(
             LogEntry,
@@ -90,7 +90,7 @@ class LogRepository:
         # 2. ID Based Filters
         if user_id: 
             query = query.filter(RawFile.uploaded_by == user_id)
-        if team_id: 
+        elif team_id: 
             query = query.filter(RawFile.team_id == team_id)
         if file_id: 
             query = query.filter(LogEntry.file_id == file_id)

@@ -45,18 +45,14 @@ def get_logs(
     target_user_id = None
     target_team_id = team_id
 
-    # SECURITY ENFORCEMENT
     if current_user.user_role != "ADMIN":
-        # Regular users can NEVER see logs from other teams
         from app.services.team_service import TeamService
         try:
             team = TeamService.get_active_team_for_user(db, user_id=current_user.user_id)
             target_team_id = team.team_id
         except ValueError:
-            # User is not in a team, return nothing
             return {"total": 0, "items": []}
     
-    # If target_team_id is None and user is ADMIN, Repository will fetch everything automatically.
     
     items = LogRepository.list_logs(
         db, 
@@ -88,7 +84,7 @@ def get_logs(
 
 
 # 2. GET MY LOGS (User Scoped Toggle: Me vs Team)
-@router.get("/me", response_model=LogListResponse)
+@router.get("/me/entries", response_model=LogListResponse)
 def get_user_logs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_active_user),
@@ -102,6 +98,7 @@ def get_user_logs(
     limit: int = 10,
     offset: int = 0
 ):
+    # Initialize targets as None
     target_user_id = None
     target_team_id = None
 
@@ -113,21 +110,35 @@ def get_user_logs(
             UserTeam.user_id == current_user.user_id, 
             UserTeam.is_active == True
         ).first()
+        
         if not membership:
             return {"total": 0, "items": []}
         target_team_id = membership.team_id
 
     items = LogRepository.list_logs(
-        db, user_id=target_user_id, team_id=target_team_id, search=search,
-        severity_code=severity_code, category_name=category_name, 
-        environment_code=environment_code, start_date=start_date, 
-        end_date=end_date, limit=limit, offset=offset
+        db, 
+        user_id=target_user_id,
+        team_id=target_team_id, 
+        search=search,
+        severity_code=severity_code, 
+        category_name=category_name, 
+        environment_code=environment_code, 
+        start_date=start_date, 
+        end_date=end_date, 
+        limit=limit, 
+        offset=offset
     )
     
     total = LogRepository.count_logs(
-        db, user_id=target_user_id, team_id=target_team_id, search=search,
-        severity_code=severity_code, category_name=category_name, 
-        environment_code=environment_code, start_date=start_date, end_date=end_date
+        db, 
+        user_id=target_user_id, 
+        team_id=target_team_id, 
+        search=search,
+        severity_code=severity_code, 
+        category_name=category_name, 
+        environment_code=environment_code, 
+        start_date=start_date, 
+        end_date=end_date
     )
 
     return {"total": total, "items": items}

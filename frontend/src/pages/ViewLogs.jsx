@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
-import {
-  Terminal, Loader2, FileText, Clock,
+import { 
+  Terminal, Loader2, FileText, Clock, 
   Search, Calendar, RotateCcw, SlidersHorizontal,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight 
 } from 'lucide-react';
 
 export default function ViewLogs() {
@@ -13,7 +13,7 @@ export default function ViewLogs() {
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const itemsPerPage = 10;
 
   const initialFilters = {
     search: '',
@@ -24,54 +24,49 @@ export default function ViewLogs() {
 
   const [filters, setFilters] = useState(initialFilters);
 
+  // 1. Reset to page 1 whenever filters change
   useEffect(() => {
-    setCurrentPage(1); // Reset to page 1 when filters change
+    setCurrentPage(1);
   }, [filters]);
 
-  //this is for server-side pagination
-   useEffect(() => {
-    fetchLogEntries();
-  }, [filters,currentPage]);
+  // 2. Fetch data when page OR filters change
+  useEffect(() => { 
+    fetchLogEntries(); 
+  }, [currentPage, filters]);
 
   const fetchLogEntries = async () => {
-  setLoading(true);
-  try {
-    const limit = itemsPerPage;
-    const offset = (currentPage - 1) * limit; //  Calculate skip value
+    setLoading(true);
+    try {
+      const limit = itemsPerPage;
+      const offset = (currentPage - 1) * limit;
 
-    // Prepare params including limit and offset
-    const params = {
-      ...filters,
-      limit: limit,
-      offset: offset
-    };
+      const params = {
+        ...filters,
+        limit: limit,
+        offset: offset
+      };
 
-    const cleanedParams = Object.fromEntries(
-      Object.entries(params).filter(([_, v]) => v !== "")
-    );
+      // Clean empty strings
+      const cleanedParams = Object.fromEntries(
+        Object.entries(params).filter(([_, v]) => v !== "")
+      );
 
-    const res = await api.get('/logs/me', { params: cleanedParams });
-    
-    //  Update states with the sliced data from server
-    setEntries(res.data?.items || []);
-    setTotalLogsCount(res.data?.total || 0); // Get the total count from DB
-  } catch (err) {
-    console.error("Error fetching personal logs:", err);
-  }
-  setLoading(false);
-};
+      // 🔥 FIX: Ensure this URL matches your Backend Route exactly
+      const res = await api.get('/logs/me/entries', { params: cleanedParams });
+      
+      setEntries(res.data?.items || []);
+      setTotalLogsCount(res.data?.total || 0);
+    } catch (err) { 
+      console.error("Error fetching logs:", err); 
+      setEntries([]);
+    }
+    setLoading(false);
+  };
 
-//Pagination Logic
-// currentEntries is now exactly what the backend sent (already sliced)
-const currentEntries = entries; 
-
-// totalPages uses the total count from the DB
-const totalPages = Math.ceil(totalLogsCount / itemsPerPage);
-
-// For the "Showing X to Y" labels
-const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-const indexOfLastItem = indexOfFirstItem + currentEntries.length;
-
+  // Pagination Math
+  const totalPages = Math.ceil(totalLogsCount / itemsPerPage);
+  const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+  const indexOfLastItem = indexOfFirstItem + entries.length;
 
   const clearFilters = () => setFilters(initialFilters);
 
@@ -89,50 +84,65 @@ const indexOfLastItem = indexOfFirstItem + currentEntries.length;
 
   return (
     <div className="p-6 space-y-6 bg-slate-50 min-h-screen font-sans">
-
-      {/* Header Area */}
+      
+      {/* Header */}
       <div className="flex items-center gap-3">
         <div className="p-2 bg-indigo-600 rounded-lg text-white shadow-md">
           <Terminal size={24} />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Personal Log Explorer</h1>
-          <p className="text-sm text-slate-500 font-medium">Search and filter through your uploaded log data</p>
+          <p className="text-sm text-slate-500 font-medium">Viewing parsed log lines from your uploads</p>
         </div>
       </div>
 
       {/* --- ADVANCED FILTER BAR --- */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
         <div className="flex items-center gap-2 text-slate-800 font-semibold border-b border-slate-50 pb-4">
           <SlidersHorizontal size={18} className="text-indigo-600" />
           <span>Search & Filter</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end border-t border-slate-50 mt-4 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end mt-4">
+          {/* restored Keyword Search */}
+          <div className="md:col-span-1">
+            <label className={labelClass}>Keyword Search</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
+              <input 
+                placeholder="Search messages..." 
+                className={`${inputClass} pl-10`} 
+                value={filters.search}
+                onChange={(e) => setFilters({...filters, search: e.target.value})}
+              />
+            </div>
+          </div>
+
           <div>
             <label className={labelClass}>From Date</label>
-            <input type="date" className={inputClass} value={filters.start_date} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} />
+            <input type="date" className={inputClass} value={filters.start_date} onChange={(e) => setFilters({...filters, start_date: e.target.value})} />
           </div>
+
           <div>
             <label className={labelClass}>To Date</label>
-            <input type="date" className={inputClass} value={filters.end_date} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} />
+            <input type="date" className={inputClass} value={filters.end_date} onChange={(e) => setFilters({...filters, end_date: e.target.value})} />
           </div>
+
           <div>
             <label className={labelClass}>Severity</label>
-            <select className={inputClass} value={filters.severity_code} onChange={(e) => setFilters({ ...filters, severity_code: e.target.value })}>
+            <select className={inputClass} value={filters.severity_code} onChange={(e) => setFilters({...filters, severity_code: e.target.value})}>
               <option value="">All Severities</option>
               <option value="ERROR">ERROR</option>
               <option value="WARN">WARN</option>
               <option value="INFO">INFO</option>
-              <option value="FATAL">FATAL</option>
             </select>
           </div>
-          <button
-            onClick={clearFilters}
-            className="flex items-center justify-center gap-2 h-[38px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-all shadow-sm"
-          >
-            <RotateCcw size={16} /> Reset Filters
-          </button>
+          
+          <div className="md:col-start-4">
+             <button onClick={clearFilters} className="flex items-center justify-center gap-2 w-full h-[38px] font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-all">
+               <RotateCcw size={16} /> Reset
+             </button>
+          </div>
         </div>
       </div>
 
@@ -142,9 +152,9 @@ const indexOfLastItem = indexOfFirstItem + currentEntries.length;
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr className="text-slate-500 text-[11px] uppercase font-bold tracking-wider">
-                <th className="p-4 w-48"><div className="flex items-center gap-2"><Clock size={12} /> Timestamp</div></th>
+                <th className="p-4 w-48"><div className="flex items-center gap-2"><Clock size={12}/> Timestamp</div></th>
                 <th className="p-4 w-28 text-center">Level</th>
-                <th className="p-4 w-40">Source File</th>
+                <th className="p-4 w-40 text-center">Source File</th>
                 <th className="p-4">Message Details</th>
               </tr>
             </thead>
@@ -158,15 +168,12 @@ const indexOfLastItem = indexOfFirstItem + currentEntries.length;
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="py-32 text-center">
-                    <div className="flex flex-col items-center justify-center text-slate-400 font-sans italic">
-                      <p className="text-lg font-bold text-slate-300 mb-2">No entries found matching criteria</p>
-                      <button onClick={clearFilters} className="text-indigo-600 hover:underline text-sm font-semibold not-italic">Reset all filters</button>
-                    </div>
+                  <td colSpan="4" className="py-32 text-center text-slate-400 font-sans italic">
+                    No entries found. Adjust your filters or upload more files.
                   </td>
                 </tr>
               ) : (
-                currentEntries.map(log => (
+                entries.map(log => (
                   <tr key={log.log_id} className="hover:bg-slate-50 transition-colors align-top">
                     <td className="p-4 text-slate-500 whitespace-nowrap tabular-nums">
                       {new Date(log.log_timestamp).toLocaleString()}
@@ -176,10 +183,10 @@ const indexOfLastItem = indexOfFirstItem + currentEntries.length;
                         {log.severity_code}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2 text-indigo-600 font-semibold truncate max-w-[150px]" title={log.file_name}>
+                    <td className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-2 text-indigo-600 font-semibold truncate max-w-[150px] mx-auto" title={log.file_name}>
                         <FileText size={14} className="opacity-70 shrink-0" />
-                        {log.file_name}
+                        <span className="truncate text-xs">{log.file_name}</span>
                       </div>
                     </td>
                     <td className="p-4 text-slate-900 break-all leading-relaxed pr-6">
@@ -192,15 +199,12 @@ const indexOfLastItem = indexOfFirstItem + currentEntries.length;
           </table>
         </div>
 
-        {/* --- PAGINATION CONTROLS --- */}
-        {!loading && entries.length > itemsPerPage && (
+        {/* --- PAGINATION FOOTER --- */}
+        {!loading && totalLogsCount > itemsPerPage && (
           <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
-            {/* Left side: Range Info */}
             <div className="text-sm text-slate-500 font-medium">
-              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, entries.length)}</span> of <span className="text-slate-700 font-bold">{entries.length}</span> logs
+              Showing <span className="text-slate-700 font-bold">{indexOfFirstItem + 1}</span> to <span className="text-slate-700 font-bold">{Math.min(indexOfLastItem, totalLogsCount)}</span> of <span className="text-slate-700 font-bold">{totalLogsCount}</span> logs
             </div>
-
-            {/* Right side: Navigation */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -209,12 +213,9 @@ const indexOfLastItem = indexOfFirstItem + currentEntries.length;
               >
                 <ChevronLeft size={18} className="text-slate-600" />
               </button>
-
-              {/* Page Display */}
               <span className="text-sm font-bold text-slate-600 px-4 tabular-nums">
                 {currentPage} / {totalPages}
               </span>
-
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
