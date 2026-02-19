@@ -56,7 +56,7 @@ def parse_and_store_logs(db: Session, file_id: int, raw_text: str, format_name: 
     # 3. Save to Database
     if log_objects:
         print(f"Action: Bulk saving {len(log_objects)} objects to log_entries table...")
-        db.bulk_save_objects(log_objects)
+        db.bulk_save_objects(log_objects) # it is used save all the log entries into database
         db.commit()
         print("--- PARSER SUCCESS: Database Committed ---\n")
     else:

@@ -93,7 +93,7 @@ def delete_file_permanently(
     if not file:
         raise HTTPException(status_code=404, detail="File not found")
 
-    # 🔥 OWNERSHIP CHECK: Admin can delete all, User only their own
+    # OWNERSHIP CHECK: Admin can delete all, User only their own
     if current_user.user_role != "ADMIN" and file.uploaded_by != current_user.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this file")
 

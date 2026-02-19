@@ -23,7 +23,7 @@ def get_db():
 def upload_files(
     team_id: int,
     environment_id: int,
-    files: List[UploadFile] = File(...), # Changed to List[UploadFile]
+    files: List[UploadFile] = File(...), # here we are taking list of file - multi file upload purpose
     db: Session = Depends(get_db),
     current_user: User = Depends(get_active_user)
 ):
@@ -71,10 +71,10 @@ def upload_files(
         for item in files_to_process:
             file = item["file_obj"]
             
-            # Save file locally
+            # to save the file locally
             file_path, file_size = save_file_locally(team_id, file)
 
-            # Store metadata
+            # Store metadata in raw_file table
             new_raw_file = RawFile( 
                 team_id=team_id,
                 uploaded_by=current_user.user_id,

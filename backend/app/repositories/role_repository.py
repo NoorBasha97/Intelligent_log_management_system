@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 
 from app.models.roles import Role
 from app.models.permissions import Permission
-# from app.models.role_permissions import RolePermission
 
 
 class RoleRepository:

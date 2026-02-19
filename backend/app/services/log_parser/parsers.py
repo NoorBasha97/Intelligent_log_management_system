@@ -16,7 +16,7 @@ LOG_PATTERN = re.compile(
     re.IGNORECASE
 )
 
-# --- HELPER LOGIC FOR DEDUPLICATION 
+# ---LOGIC FOR DEDUPLICATION 
 def is_duplicate(log_entry, seen_set):
     """
     Creates a unique fingerprint for a log line.
@@ -41,10 +41,10 @@ def parse_text(text: str):
     
     for line in text.splitlines():
         line = line.strip()
-        if not line:  # Skip empty lines
+        if not line:  # it will Skip empty lines
             continue
         
-        match = LOG_PATTERN.search(line) 
+        match = LOG_PATTERN.search(line)
         if match:
             data = match.groupdict()
             try:
@@ -67,8 +67,8 @@ def parse_text(text: str):
 
 def parse_json(text: str):
     try:
-        data = json.loads(text)
-        items = data if isinstance(data, list) else [data]
+        data = json.loads(text) #it will loads the entire raw text into list of log entries
+        items = data if isinstance(data, list) else [data] #if data is not in list form it will convert
         results = []
         seen_logs = set()
 
