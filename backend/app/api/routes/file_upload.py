@@ -11,6 +11,7 @@ from app.api.deps import get_active_user
 from app.models.user import User
 from app.models.log_entries import Environment
 from typing import List
+import traceback
 
 router = APIRouter(prefix="/files", tags=["File Upload"])
 
@@ -19,62 +20,79 @@ def get_db():
     try: yield db
     finally: db.close() 
 
-@router.post("/upload", response_model=List[RawFileResponse]) # Changed to List
+@router.post("/upload", response_model=List[RawFileResponse])
 def upload_files(
     team_id: int,
     environment_id: int,
-    files: List[UploadFile] = File(...), # here we are taking list of file - multi file upload purpose
+    files: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_active_user)
 ):
-    # Security Check
+    # 1. Security Check
     if current_user.user_role != "ADMIN":
         from app.models.user_teams import UserTeam
         membership = db.query(UserTeam).filter(
             UserTeam.user_id == current_user.user_id,
-            UserTeam.team_id == team_id
+            UserTeam.team_id == team_id,
+            UserTeam.is_active == True
         ).first()
         if not membership:
             raise HTTPException(status_code=403, detail="You do not belong to this team")
         
     db.execute(text(f"SET app.current_user_id = '{current_user.user_id}'"))
 
-    # 1. PRE-VALIDATION: Check all files before processing any
-    valid_formats = {f.format_name.lower(): f.format_id for f in db.query(FileFormat).all()}
-    env = db.query(Environment).filter(Environment.environment_id == environment_id).first()
+    # 2. PRE-VALIDATION: Get available formats from DB (Case-Insensitive)
+    # This creates a dictionary: {'LOG': 1, 'JSON': 3, 'CSV': 4, 'XML': 5}
+    db_formats = {f.format_name.upper(): f.format_id for f in db.query(FileFormat).all()}
     
+    env = db.query(Environment).filter(Environment.environment_id == environment_id).first()
     if not env:
         raise HTTPException(status_code=400, detail="Invalid environment_id")
 
     files_to_process = []
+    
     for file in files:
+        if not file.filename:
+            continue
+            
         ext = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
-        # Map specific extensions to DB format names
-        # Logic: .log/.txt -> LOG, .json -> JSON, .csv -> CSV, .xml -> XML
-        fmt_name = 'LOG' if ext in ['log', 'txt'] else ext.upper()
         
-        if fmt_name.lower() not in valid_formats:
+        # EXTENSION MAPPING LOGIC
+        # Map file extensions to the actual names present in your 'file_formats' table
+        if ext in ['log', 'txt']:
+            target_fmt_name = 'LOG'
+        elif ext == 'json':
+            target_fmt_name = 'JSON'
+        elif ext == 'csv':
+            target_fmt_name = 'CSV'
+        elif ext == 'xml':
+            target_fmt_name = 'XML'
+        else:
+            target_fmt_name = ext.upper()
+
+        # Check if the mapped name exists in our database dictionary
+        if target_fmt_name not in db_formats:
             raise HTTPException(
                 status_code=400, 
-                detail=f"File '{file.filename}' has an unsupported format: {ext.upper()}. Upload canceled."
+                detail=f"Format '{target_fmt_name}' (from .{ext} file) is not supported in the database. Supported: {list(db_formats.keys())}"
             )
         
         files_to_process.append({
             "file_obj": file,
-            "format_id": valid_formats[fmt_name.lower()],
-            "format_name": fmt_name
+            "format_id": db_formats[target_fmt_name],
+            "format_name": target_fmt_name
         })
 
-    # 2. PROCESSING: Loop and store
+    # 3. PROCESSING
     processed_files = []
     try:
         for item in files_to_process:
             file = item["file_obj"]
             
-            # to save the file locally
+            # Save file locally
             file_path, file_size = save_file_locally(team_id, file)
 
-            # Store metadata in raw_file table
+            # Store metadata
             new_raw_file = RawFile( 
                 team_id=team_id,
                 uploaded_by=current_user.user_id,
@@ -104,6 +122,6 @@ def upload_files(
 
     except Exception as e:
         db.rollback()
-        import traceback
+        print("--- MULTI-UPLOAD ERROR ---")
         print(traceback.format_exc()) 
         raise HTTPException(status_code=500, detail=f"Batch processing failed: {str(e)}")
