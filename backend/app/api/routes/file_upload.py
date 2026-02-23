@@ -52,7 +52,8 @@ def upload_files(
     files_to_process = []
     
     for file in files:
-        if not file.filename:
+        if file is None or not file.filename:
+            print("DEBUG: Skipping an empty file slot.")
             continue
             
         ext = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
@@ -60,7 +61,7 @@ def upload_files(
         # EXTENSION MAPPING LOGIC
         # Map file extensions to the actual names present in your 'file_formats' table
         if ext in ['log', 'txt']:
-            target_fmt_name = 'LOG'
+            target_fmt_name = 'TXT'
         elif ext == 'json':
             target_fmt_name = 'JSON'
         elif ext == 'csv':

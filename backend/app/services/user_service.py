@@ -135,15 +135,6 @@ class UserService:
             db.rollback()
             raise ValueError("User update failed")
 
-    # -------------------------
-    # permanent delete user (ADMIN)
-    # -------------------------
-    # @staticmethod
-    # def delete_user(
-    #     db: Session,
-    #     user: User
-    # ) -> None:
-    #     UserRepository.permanent_delete_user(db, user)
     
     @staticmethod
     def delete_user(db: Session, user: User) -> None:

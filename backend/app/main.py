@@ -26,24 +26,12 @@ app = FastAPI(
 #CORS configuration (ADD THIS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# -------------------------
-# Create DB tables (DEV only)
-# -------------------------
-# @app.on_event("startup")
-# def on_startup():
-#     """
-#     Create tables on startup.
-#     In production, use Alembic instead.
-#     """
-#     # In your engine setup or main.py
-#     Base.metadata.drop_all(bind=engine)
-#     Base.metadata.create_all(bind=engine)
 
 
 # Health check

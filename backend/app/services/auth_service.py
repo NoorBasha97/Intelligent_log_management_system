@@ -98,16 +98,3 @@ class AuthService:
         
         # Save the counter update
         db.commit()
-
-    # @staticmethod
-    # def change_password(db: Session, *, user: User, old_password: str, new_password: str) -> None:
-    #     credentials = user.credentials
-    #     if not credentials:
-    #         raise ValueError("Credentials not found")
-
-    #     if not UserService.verify_password(old_password, credentials.password_hash):
-    #         raise ValueError("Old password is incorrect")
-
-    #     credentials.password_hash = UserService.hash_password(new_password)
-    #     credentials.password_set_at = datetime.utcnow()
-    #     db.commit()

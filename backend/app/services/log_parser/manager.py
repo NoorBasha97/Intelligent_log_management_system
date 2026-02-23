@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.log_entries import LogEntry, LogSeverity, LogCategory, Environment
-from .utils import get_lookups, classify_log
+from .utils import detect_actual_format, get_lookups, classify_log
 from . import parsers
 
 def parse_and_store_logs(db: Session, file_id: int, raw_text: str, format_name: str, environment_code: str = "DEV"):
@@ -9,7 +9,10 @@ def parse_and_store_logs(db: Session, file_id: int, raw_text: str, format_name: 
     lookups = get_lookups(db, environment_code)
     
     # 1. Select Parser based on format name
-    fmt = format_name.upper().strip()
+    # fmt = format_name.upper().strip()
+    fmt = detect_actual_format(raw_text, format_name.upper())
+    
+    print(f"DEBUG: Extension said {format_name}, Content suggests {fmt}")
     entries = []
     
     if fmt in ['LOG', 'TXT']:
@@ -20,7 +23,7 @@ def parse_and_store_logs(db: Session, file_id: int, raw_text: str, format_name: 
         entries = parsers.parse_json(raw_text)
     elif fmt == 'CSV':
         print("Action: Using CSV Parser")
-        entries = parsers.parse_csv(raw_text)
+        entries = parsers.parse_csv(raw_text)   
     elif fmt == 'XML': 
         entries = parsers.parse_xml(raw_text)
     else:

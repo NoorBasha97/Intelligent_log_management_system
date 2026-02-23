@@ -146,49 +146,6 @@ def update_user_by_admin(
         db.rollback()
         print(f"Update Error: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
-    
-    
-# -------------------------
-# Delete user (ADMIN)
-# -------------------------
-# @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-# def delete_user(
-#     user_id: int,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(require_permission("MANAGE_USERS"))
-# ):
-#     # 1. Fetch the user
-#     user = db.query(User).filter(User.user_id == user_id).first()
-#     if not user:
-#         raise HTTPException(status_code=404, detail="User not found")
-
-#     try:
-#         # 2. MANUAL CASCADE (Backup logic if DB constraints fail)
-#         # Find all files uploaded by this user
-#         user_files = db.query(RawFile).filter(RawFile.uploaded_by == user_id).all()
-#         file_ids = [f.file_id for f in user_files]
-
-#         # Delete logs belonging to those files
-#         if file_ids:
-#             db.query(LogEntry).filter(LogEntry.file_id.in_(file_ids)).delete(synchronize_session=False)
-        
-#         # Delete the files themselves
-#         db.query(RawFile).filter(RawFile.uploaded_by == user_id).delete(synchronize_session=False)
-
-#         # Delete login history, team assignments, and credentials
-#         db.query(UserLoginHistory).filter(UserLoginHistory.user_id == user_id).delete(synchronize_session=False)
-#         db.query(UserTeam).filter(UserTeam.user_id == user_id).delete(synchronize_session=False)
-#         db.query(UserCredential).filter(UserCredential.user_id == user_id).delete(synchronize_session=False)
-
-#         # 3. Final step: Delete the user
-#         db.delete(user)
-#         db.commit()
-        
-#         return None
-#     except Exception as e:
-#         db.rollback()
-#         print(f"Error deleting user: {str(e)}")
-#         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(

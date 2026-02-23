@@ -102,7 +102,7 @@ def parse_csv(text: str):
     
     for row in reader:
         # Standardize keys to lowercase to handle 'Timestamp' vs 'timestamp'
-        clean_row = {k.lower(): v for k, v in row.items()}
+        clean_row = {str(k).lower().strip(): v for k, v in row.items() if k is not None}
         
         ts = clean_row.get("timestamp")
         msg = clean_row.get("message")
